@@ -185,6 +185,52 @@
       (assert present-p))
     (assert (ordered-map-empty-p map))))
 
+
+(define-test test-lru-cache-recency-and-count
+  (let ((cache (make-lru-cache :maximum-count 2)))
+    (lru-cache-put cache 'a 1)
+    (lru-cache-put cache 'b 2)
+    (lru-cache-get cache 'a)
+    (multiple-value-bind (value evicted)
+        (lru-cache-put cache 'c 3)
+      (test-equal 3 value)
+      (test-equal #((b . 2)) evicted))
+    (test-equal #(a c) (lru-cache-keys cache))))
+
+(define-test test-lru-cache-weight
+  (let* ((evicted nil)
+         (cache (make-lru-cache
+                 :maximum-weight 4
+                 :weight-function (lambda (key value)
+                                    (declare (ignore key))
+                                    (length value))
+                 :eviction-function (lambda (key value)
+                                      (push (cons key value) evicted)))))
+    (lru-cache-put cache 'a "aa")
+    (lru-cache-put cache 'b "bbb")
+    (test-equal #(b) (lru-cache-keys cache))
+    (test-equal 3 (lru-cache-total-weight cache))
+    (test-equal '((a . "aa")) evicted)))
+
+(define-test test-memo-cache
+  (let ((calls 0)
+        (cache (make-memo-cache :maximum-count 2)))
+    (multiple-value-bind (value hit-p)
+        (memo-cache-get cache 'answer
+                        (lambda ()
+                          (incf calls)
+                          42))
+      (test-equal 42 value)
+      (assert (null hit-p)))
+    (multiple-value-bind (value hit-p)
+        (memo-cache-get cache 'answer
+                        (lambda ()
+                          (incf calls)
+                          99))
+      (test-equal 42 value)
+      (assert hit-p))
+    (test-equal 1 calls)))
+
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))

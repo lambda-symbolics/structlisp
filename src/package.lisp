@@ -89,6 +89,34 @@
    #:ordered-map-values
    #:ordered-map->alist
    #:ordered-map-clear
+   ;; LRU and memo caches
+   #:lru-cache
+   #:make-lru-cache
+   #:lru-cache-count
+   #:lru-cache-empty-p
+   #:lru-cache-total-weight
+   #:lru-cache-maximum-count
+   #:lru-cache-maximum-weight
+   #:lru-cache-get
+   #:lru-cache-peek
+   #:lru-cache-put
+   #:lru-cache-delete
+   #:lru-cache-least-recent
+   #:lru-cache-most-recent
+   #:lru-cache-map
+   #:lru-cache-keys
+   #:lru-cache-clear
+   #:lru-cache-error
+   #:lru-cache-weight-error
+   #:lru-cache-weight-error-key
+   #:lru-cache-weight-error-value
+   #:lru-cache-weight-error-weight
+   #:memo-cache
+   #:make-memo-cache
+   #:memo-cache-count
+   #:memo-cache-get
+   #:memo-cache-delete
+   #:memo-cache-clear
    ;; Tests
    #:run-tests))
 
