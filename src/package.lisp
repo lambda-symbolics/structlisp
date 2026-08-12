@@ -50,6 +50,26 @@
    #:priority-queue-error
    #:priority-queue-duplicate-key
    #:priority-queue-duplicate-key-key
+   ;; Sorted string index
+   #:sorted-string-index
+   #:make-sorted-string-index
+   #:sorted-string-index-count
+   #:sorted-string-index-empty-p
+   #:sorted-string-index-ref
+   #:sorted-string-index-key-ref
+   #:sorted-string-index-lower-bound
+   #:sorted-string-index-upper-bound
+   #:sorted-string-index-equal-range
+   #:sorted-string-index-prefix-range
+   #:sorted-string-index-prefix-items
+   #:sorted-string-index-insert
+   #:sorted-string-index-remove-at
+   #:sorted-string-index-remove
+   #:sorted-string-index->vector
+   #:sorted-string-index-error
+   #:sorted-string-index-key-error
+   #:sorted-string-index-key-error-item
+   #:sorted-string-index-key-error-key
    ;; Tests
    #:run-tests))
 

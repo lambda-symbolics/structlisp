@@ -132,6 +132,33 @@
               (top-k '((a . 4) (b . 2) (c . 3) (d . 1))
                      2
                      :key #'rest)))
+
+(define-test test-sorted-string-index-prefixes
+  (let ((index (make-sorted-string-index
+                :initial-contents '("Beta" "alpine" "alpha" "alphabet")
+                :normalizer #'string-downcase)))
+    (test-equal #("alpha" "alphabet" "alpine" "Beta")
+                (sorted-string-index->vector index))
+    (multiple-value-bind (start end)
+        (sorted-string-index-prefix-range index "ALP")
+      (test-equal 0 start)
+      (test-equal 3 end))
+    (test-equal #("alpha" "alphabet")
+                (sorted-string-index-prefix-items index "alph"))))
+
+(define-test test-sorted-string-index-mutation
+  (let ((index (make-sorted-string-index :initial-contents '("b" "d"))))
+    (test-equal 1 (sorted-string-index-insert index "c"))
+    (test-equal 0 (sorted-string-index-insert index "a"))
+    (test-equal #("a" "b" "c" "d")
+                (sorted-string-index->vector index))
+    (multiple-value-bind (item removed-p)
+        (sorted-string-index-remove index "c" :test #'string=)
+      (test-equal "c" item)
+      (assert removed-p))
+    (test-equal #("a" "b" "d")
+                (sorted-string-index->vector index))))
+
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))

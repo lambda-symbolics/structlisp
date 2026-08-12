@@ -11,7 +11,8 @@
   :serial t
   :components ((:file "package")
                (:file "deque")
-               (:file "priority-queue"))
+               (:file "priority-queue")
+               (:file "sorted-string-index"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"
