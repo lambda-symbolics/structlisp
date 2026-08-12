@@ -9,7 +9,8 @@
   :version "0.1.0"
   :pathname "src"
   :serial t
-  :components ((:file "package"))
+  :components ((:file "package")
+               (:file "deque"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"
