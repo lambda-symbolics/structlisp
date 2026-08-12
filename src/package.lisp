@@ -117,6 +117,43 @@
    #:memo-cache-get
    #:memo-cache-delete
    #:memo-cache-clear
+   ;; Integer intervals
+   #:integer-interval
+   #:make-integer-interval
+   #:integer-interval-start
+   #:integer-interval-end
+   #:integer-interval-entry
+   #:integer-interval-entry-start
+   #:integer-interval-entry-end
+   #:integer-interval-entry-value
+   #:integer-interval-error
+   #:integer-interval-error-start
+   #:integer-interval-error-end
+   #:integer-interval-set
+   #:make-integer-interval-set
+   #:integer-interval-set-count
+   #:integer-interval-set-empty-p
+   #:integer-interval-set-add
+   #:integer-interval-set-remove
+   #:integer-interval-set-contains-p
+   #:integer-interval-set-covers-p
+   #:integer-interval-set-intersects-p
+   #:integer-interval-set-union
+   #:integer-interval-set-intersection
+   #:integer-interval-set-difference
+   #:integer-interval-set->vector
+   #:integer-interval-set-clear
+   #:integer-interval-map
+   #:make-integer-interval-map
+   #:integer-interval-map-count
+   #:integer-interval-map-empty-p
+   #:integer-interval-map-get
+   #:integer-interval-map-set
+   #:integer-interval-map-delete
+   #:integer-interval-map-overlaps
+   #:integer-interval-map-map
+   #:integer-interval-map->vector
+   #:integer-interval-map-clear
    ;; Tests
    #:run-tests))
 

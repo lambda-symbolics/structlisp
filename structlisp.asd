@@ -14,7 +14,8 @@
                (:file "priority-queue")
                (:file "sorted-string-index")
                (:file "ordered-map")
-               (:file "lru-cache"))
+               (:file "lru-cache")
+               (:file "interval"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"

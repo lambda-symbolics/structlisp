@@ -231,6 +231,67 @@
       (assert hit-p))
     (test-equal 1 calls)))
 
+
+(defun test-interval-pairs (intervals)
+  (map 'vector
+       (lambda (interval)
+         (cons (integer-interval-start interval)
+               (integer-interval-end interval)))
+       intervals))
+
+(defun test-interval-map-triples (entries)
+  (map 'vector
+       (lambda (entry)
+         (list (integer-interval-entry-start entry)
+               (integer-interval-entry-end entry)
+               (integer-interval-entry-value entry)))
+       entries))
+
+(define-test test-integer-interval-set
+  (let ((set (make-integer-interval-set)))
+    (integer-interval-set-add set 5 10)
+    (integer-interval-set-add set 1 3)
+    (integer-interval-set-add set 3 5)
+    (test-equal #((1 . 10))
+                (test-interval-pairs (integer-interval-set->vector set)))
+    (integer-interval-set-remove set 4 7)
+    (test-equal #((1 . 4) (7 . 10))
+                (test-interval-pairs (integer-interval-set->vector set)))
+    (assert (integer-interval-set-contains-p set 3))
+    (assert (null (integer-interval-set-contains-p set 4)))
+    (assert (integer-interval-set-covers-p set 7 10))
+    (assert (integer-interval-set-intersects-p set 9 12))))
+
+(define-test test-integer-interval-set-operations
+  (let* ((left (make-integer-interval-set :intervals '((1 . 5) (8 . 10))))
+         (right (make-integer-interval-set :intervals '((3 . 9))))
+         (intersection (integer-interval-set-intersection left right))
+         (difference (integer-interval-set-difference left right)))
+    (test-equal #((3 . 5) (8 . 9))
+                (test-interval-pairs
+                 (integer-interval-set->vector intersection)))
+    (test-equal #((1 . 3) (9 . 10))
+                (test-interval-pairs
+                 (integer-interval-set->vector difference)))))
+
+(define-test test-integer-interval-map
+  (let ((map (make-integer-interval-map)))
+    (integer-interval-map-set map 0 10 'base)
+    (integer-interval-map-set map 3 7 'middle)
+    (test-equal #((0 3 base) (3 7 middle) (7 10 base))
+                (test-interval-map-triples
+                 (integer-interval-map->vector map)))
+    (multiple-value-bind (value start end present-p)
+        (integer-interval-map-get map 5)
+      (test-equal 'middle value)
+      (test-equal 3 start)
+      (test-equal 7 end)
+      (assert present-p))
+    (integer-interval-map-delete map 4 8)
+    (test-equal #((0 3 base) (3 4 middle) (8 10 base))
+                (test-interval-map-triples
+                 (integer-interval-map->vector map)))))
+
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))
