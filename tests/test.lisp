@@ -159,6 +159,32 @@
     (test-equal #("a" "b" "d")
                 (sorted-string-index->vector index))))
 
+
+(define-test test-ordered-map-order
+  (let ((map (make-ordered-map :test 'equal
+                               :initial-contents '(("a" . 1) ("b" . 2)))))
+    (ordered-map-set map "c" 3)
+    (ordered-map-set map "b" 20)
+    (test-equal '( ("a" . 1) ("b" . 20) ("c" . 3))
+                (ordered-map->alist map))
+    (ordered-map-move-to-front map "c")
+    (test-equal #("c" "a" "b") (ordered-map-keys map))
+    (ordered-map-move-to-back map "a")
+    (test-equal #("c" "b" "a") (ordered-map-keys map))))
+
+(define-test test-ordered-map-removal
+  (let ((map (make-ordered-map :initial-contents '((a . 1) (b . 2)))))
+    (multiple-value-bind (key value present-p)
+        (ordered-map-pop-first map)
+      (test-equal 'a key)
+      (test-equal 1 value)
+      (assert present-p))
+    (multiple-value-bind (value present-p)
+        (ordered-map-delete map 'b)
+      (test-equal 2 value)
+      (assert present-p))
+    (assert (ordered-map-empty-p map))))
+
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))

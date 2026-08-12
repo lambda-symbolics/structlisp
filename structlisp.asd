@@ -12,7 +12,8 @@
   :components ((:file "package")
                (:file "deque")
                (:file "priority-queue")
-               (:file "sorted-string-index"))
+               (:file "sorted-string-index")
+               (:file "ordered-map"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"

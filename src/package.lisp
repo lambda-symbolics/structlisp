@@ -70,6 +70,25 @@
    #:sorted-string-index-key-error
    #:sorted-string-index-key-error-item
    #:sorted-string-index-key-error-key
+   ;; Ordered map
+   #:ordered-map
+   #:make-ordered-map
+   #:ordered-map-count
+   #:ordered-map-empty-p
+   #:ordered-map-get
+   #:ordered-map-set
+   #:ordered-map-delete
+   #:ordered-map-first
+   #:ordered-map-last
+   #:ordered-map-pop-first
+   #:ordered-map-pop-last
+   #:ordered-map-move-to-front
+   #:ordered-map-move-to-back
+   #:ordered-map-map
+   #:ordered-map-keys
+   #:ordered-map-values
+   #:ordered-map->alist
+   #:ordered-map-clear
    ;; Tests
    #:run-tests))
 
