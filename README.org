@@ -1,0 +1,29 @@
+#+TITLE: Structlisp
+
+Structlisp is a portable Common Lisp library of general-purpose data structures
+for interactive systems. It has no runtime dependencies beyond ANSI Common
+Lisp.
+
+* Status
+
+The public API and implementations are being added incrementally. Every
+released structure is covered by the ASDF test system.
+
+* Loading
+
+#+begin_src lisp
+(asdf:load-system "structlisp")
+#+end_src
+
+Run the tests with:
+
+#+begin_src lisp
+(asdf:test-system "structlisp")
+#+end_src
+
+* License
+
+Copyright 2025 Lukáš Hozda
+
+Licensed under COLL-Attribution. See =LICENSE.lisp= for the authoritative
+terms.
