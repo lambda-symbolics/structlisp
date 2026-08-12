@@ -262,12 +262,13 @@ items. Insertion shifts the nearer end and is O(min(INDEX, COUNT-INDEX))."
   "Destructively split DEQUE before INDEX and return the removed suffix.
 
 DEQUE retains elements before INDEX. The returned deque has the same weight
-function but no count or weight limits, so the split cannot discard data."
+function but no count or weight limits, so the split cannot discard data. The
+operation is linear in the suffix length."
   (deque--check-index deque index t)
   (let ((suffix (make-deque :initial-capacity (- (deque-count deque) index)
                             :weight-function (deque-weight-function deque))))
     (loop while (> (deque-count deque) index)
-          do (deque-push-back suffix (deque-remove-at deque index)))
+          do (deque-push-front suffix (deque--remove-back deque)))
     suffix))
 
 (defun deque-clear (deque)

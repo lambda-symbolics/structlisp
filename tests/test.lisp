@@ -62,6 +62,32 @@
       (test-equal #("b" "ccc" "123456") evicted))
     (assert (deque-empty-p deque))))
 
+
+(define-test test-deque-budget-edge-cases
+  (let ((back-evicting (make-deque :maximum-count 2
+                                    :eviction-end :back
+                                    :initial-contents '(a b c))))
+    (test-equal #(a b) (deque->vector back-evicting))
+    (multiple-value-bind (element evicted)
+        (deque-push-front back-evicting 'z)
+      (test-equal 'z element)
+      (test-equal #(b) evicted))
+    (test-equal #(z a) (deque->vector back-evicting)))
+  (let ((empty (make-deque :maximum-count 0
+                           :initial-contents '(a b))))
+    (assert (deque-empty-p empty)))
+  (let ((weighted (make-deque :maximum-weight 4
+                              :weight-function #'length
+                              :initial-contents '("a" "bb"))))
+    (setf (deque-ref weighted 0) "aa")
+    (test-equal 4 (deque-total-weight weighted))
+    (handler-case
+        (progn
+          (setf (deque-ref weighted 0) "toolong")
+          (error "Expected overweight replacement failure."))
+      (error ()))
+    (test-equal #("aa" "bb") (deque->vector weighted))))
+
 (define-test test-deque-wrap-and-shift
   (let ((deque (make-deque :initial-capacity 4
                            :initial-contents '(0 1 2 3))))
@@ -224,6 +250,38 @@
     (test-equal #(b) (lru-cache-keys cache))
     (test-equal 3 (lru-cache-total-weight cache))
     (test-equal '((a . "aa")) evicted)))
+
+
+(define-test test-lru-cache-budget-edge-cases
+  (let ((cache (make-lru-cache
+                :maximum-count 2
+                :maximum-weight 4
+                :weight-function (lambda (key value)
+                                   (declare (ignore key))
+                                   (length value)))))
+    (lru-cache-put cache 'a "a")
+    (lru-cache-put cache 'b "bb")
+    (multiple-value-bind (value evicted)
+        (lru-cache-put cache 'a "toolong")
+      (test-equal "toolong" value)
+      (test-equal #((b . "bb") (a . "toolong")) evicted))
+    (assert (lru-cache-empty-p cache)))
+  (let ((cache (make-lru-cache :maximum-count 0)))
+    (multiple-value-bind (value evicted)
+        (lru-cache-put cache 'a nil)
+      (assert (null value))
+      (test-equal #((a)) evicted))
+    (assert (lru-cache-empty-p cache)))
+  (let ((calls 0)
+        (cache (make-memo-cache :maximum-count 0)))
+    (loop repeat 2
+          do (multiple-value-bind (value hit-p)
+                 (memo-cache-get cache 'a
+                                 (lambda ()
+                                   (incf calls)))
+               (assert (null hit-p))
+               (test-equal calls value)))
+    (test-equal 2 calls)))
 
 
 (define-test test-lru-cache-snapshot-traversal
