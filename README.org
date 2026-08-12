@@ -4,10 +4,27 @@ Structlisp is a portable Common Lisp library of general-purpose data structures
 for interactive systems. It has no runtime dependencies beyond ANSI Common
 Lisp.
 
-* Status
+* Contents
 
-The public API and implementations are being added incrementally. Every
-released structure is covered by the ASDF test system.
+- A circular-array deque with O(1) amortized end operations, O(1) indexed
+  access, indexed insertion and removal, destructive splitting, maintained
+  element weights, and count- or weight-triggered eviction.
+- A stable binary min-heap with optional unique keys for cancellation and
+  reprioritization, plus O(n log k) top-K selection.
+- A sorted string index with cached normalized keys and binary-searched exact
+  and prefix ranges.
+- An insertion-ordered hash map with O(1) expected lookup and deletion.
+- A least-recently-used cache with maintained count and weight budgets, plus a
+  producer-backed memo cache.
+- Canonical half-open integer interval sets and maps with binary-search queries
+  and linear set algebra or rewrites.
+- A compact monotone unsigned-integer index with lower-bound, upper-bound, and
+  neighboring-value queries.
+
+All structures use opaque representations and live in the =structlisp=
+package. Public traversal functions use snapshots, so callbacks may safely
+mutate the traversed container. APIs that can store =nil= return an explicit
+presence value where needed.
 
 * Loading
 
@@ -20,6 +37,18 @@ Run the tests with:
 #+begin_src lisp
 (asdf:test-system "structlisp")
 #+end_src
+
+* Example
+
+#+begin_src lisp
+(let ((history (structlisp:make-deque :maximum-count 250)))
+  (structlisp:deque-push-back history "first command")
+  (structlisp:deque-push-back history "second command")
+  (structlisp:deque-back history))
+#+end_src
+
+See the exported symbols in =src/package.lisp= and their documentation strings
+for the complete API.
 
 * License
 
