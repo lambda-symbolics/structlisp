@@ -35,6 +35,21 @@
    #:deque-weight-error
    #:deque-weight-error-element
    #:deque-weight-error-weight
+   ;; Priority queue
+   #:priority-queue
+   #:make-priority-queue
+   #:priority-queue-count
+   #:priority-queue-empty-p
+   #:priority-queue-push
+   #:priority-queue-peek
+   #:priority-queue-pop
+   #:priority-queue-cancel
+   #:priority-queue-change-priority
+   #:priority-queue-clear
+   #:top-k
+   #:priority-queue-error
+   #:priority-queue-duplicate-key
+   #:priority-queue-duplicate-key-key
    ;; Tests
    #:run-tests))
 

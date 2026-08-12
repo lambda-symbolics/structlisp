@@ -91,6 +91,47 @@
             (error "Expected DEQUE-WEIGHT-ERROR."))
         (deque-weight-error ())))))
 
+
+(define-test test-priority-queue-stability
+  (let ((queue (make-priority-queue)))
+    (priority-queue-push queue 'late 5)
+    (priority-queue-push queue 'first 1)
+    (priority-queue-push queue 'second 1)
+    (test-equal 'first (priority-queue-pop queue))
+    (test-equal 'second (priority-queue-pop queue))
+    (test-equal 'late (priority-queue-pop queue))
+    (assert (priority-queue-empty-p queue))))
+
+(define-test test-priority-queue-cancel-and-change
+  (let ((queue (make-priority-queue :key-function #'first :key-test 'equal)))
+    (priority-queue-push queue '("a" value-a) 10)
+    (priority-queue-push queue '("b" value-b) 20)
+    (multiple-value-bind (item changed-p)
+        (priority-queue-change-priority queue "b" 1)
+      (test-equal '("b" value-b) item)
+      (assert changed-p))
+    (test-equal '("b" value-b) (priority-queue-pop queue))
+    (multiple-value-bind (item priority removed-p)
+        (priority-queue-cancel queue "a")
+      (test-equal '("a" value-a) item)
+      (test-equal 10 priority)
+      (assert removed-p))))
+
+(define-test test-priority-queue-duplicate-key
+  (let ((queue (make-priority-queue)))
+    (priority-queue-push queue 'a 1 :key nil)
+    (handler-case
+        (progn
+          (priority-queue-push queue 'b 2 :key nil)
+          (error "Expected PRIORITY-QUEUE-DUPLICATE-KEY."))
+      (priority-queue-duplicate-key ()))))
+
+(define-test test-top-k
+  (test-equal #(1 2 3) (top-k '(8 2 5 1 3 9) 3))
+  (test-equal #((d . 1) (b . 2))
+              (top-k '((a . 4) (b . 2) (c . 3) (d . 1))
+                     2
+                     :key #'rest)))
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))

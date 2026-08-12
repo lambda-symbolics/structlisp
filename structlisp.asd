@@ -10,7 +10,8 @@
   :pathname "src"
   :serial t
   :components ((:file "package")
-               (:file "deque"))
+               (:file "deque")
+               (:file "priority-queue"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"
