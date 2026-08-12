@@ -186,6 +186,27 @@
                 (sorted-string-index->vector index))))
 
 
+(define-test test-sorted-string-index-copies-keys
+  (let* ((middle (copy-seq "b"))
+         (index (make-sorted-string-index
+                 :initial-contents (list "a" middle "c"))))
+    (setf (char middle 0) #\z)
+    (multiple-value-bind (start end)
+        (sorted-string-index-prefix-range index "b")
+      (test-equal 1 start)
+      (test-equal 2 end))
+    (let ((key-copy (sorted-string-index-key-ref index 1)))
+      (setf (char key-copy 0) #\x))
+    (multiple-value-bind (start end)
+        (sorted-string-index-prefix-range index "b")
+      (test-equal 1 start)
+      (test-equal 2 end))
+    (multiple-value-bind (item removed-p)
+        (sorted-string-index-remove index middle :test #'eq)
+      (assert (eq item middle))
+      (assert removed-p))))
+
+
 (define-test test-ordered-map-order
   (let ((map (make-ordered-map :test 'equal
                                :initial-contents '(("a" . 1) ("b" . 2)))))

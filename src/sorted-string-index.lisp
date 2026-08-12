@@ -46,8 +46,9 @@
 
 KEY extracts a string from each item. NORMALIZER transforms both item keys and
 queries, for example with STRING-DOWNCASE for case-insensitive lookup. Keys are
-cached, so normalization happens once per insertion rather than once per query
-and candidate. Equal keys retain input order."
+copied and cached, so normalization happens once per insertion rather than once
+per query and candidate. Later mutation of an item does not update its key.
+Equal keys retain input order."
   (check-type key (or function symbol))
   (check-type normalizer (or function symbol))
   (let* ((index (sorted-string-index--make
@@ -86,8 +87,8 @@ and candidate. Equal keys retain input order."
   (aref (sorted-string-index-items index) position))
 
 (defun sorted-string-index-key-ref (index position)
-  "Return the cached normalized key at sorted zero-based POSITION."
-  (aref (sorted-string-index-keys index) position))
+  "Return a fresh copy of the cached normalized key at sorted POSITION."
+  (copy-seq (aref (sorted-string-index-keys index) position)))
 
 (defun sorted-string-index-lower-bound (index query)
   "Return the first position whose normalized key is not less than QUERY."
@@ -121,7 +122,9 @@ index."
     (subseq (sorted-string-index-items index) start end)))
 
 (defun sorted-string-index-insert (index item)
-  "Insert ITEM after existing equal keys and return its sorted position."
+  "Insert ITEM after existing equal keys and return its sorted position.
+
+The normalized key is copied; later mutation of ITEM does not update it."
   (let* ((key (sorted-string-index--item-key index item))
          (position (sorted-string-index--upper-bound-key index key)))
     (setf (sorted-string-index-items index)
@@ -146,15 +149,13 @@ index."
 (defun sorted-string-index-remove (index item &key (test #'eql))
   "Remove the first matching ITEM and return it and true.
 
-Only the equal-key range is searched. Return NIL and NIL when no item matches."
-  (let ((key (sorted-string-index--item-key index item)))
-    (loop with start = (sorted-string-index--lower-bound-key index key)
-          with end = (sorted-string-index--upper-bound-key index key)
-          for position from start below end
-          for candidate = (sorted-string-index-ref index position)
-          when (funcall test item candidate)
-            do (return (values (sorted-string-index-remove-at index position) t))
-          finally (return (values nil nil)))))
+The item vector is searched directly, so removal still works if an item's key
+has changed since insertion. Return NIL and NIL when no item matches."
+  (loop for position below (sorted-string-index-count index)
+        for candidate = (sorted-string-index-ref index position)
+        when (funcall test item candidate)
+          do (return (values (sorted-string-index-remove-at index position) t))
+        finally (return (values nil nil))))
 
 (defun sorted-string-index->vector (index)
   "Return a fresh vector of every item in sorted order."
@@ -171,7 +172,7 @@ Only the equal-key range is searched. Return NIL and NIL when no item matches."
              :index index
              :item item
              :key key))
-    key))
+    (copy-seq key)))
 
 (defun sorted-string-index--query-key (index query)
   (let ((key (funcall (sorted-string-index-normalizer index) query)))
@@ -182,12 +183,15 @@ Only the equal-key range is searched. Return NIL and NIL when no item matches."
              :key key))
     key))
 
+(defun sorted-string-index--key-at (index position)
+  (aref (sorted-string-index-keys index) position))
+
 (defun sorted-string-index--lower-bound-key (index query-key)
   (let ((low 0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
-          if (string< (sorted-string-index-key-ref index middle) query-key)
+          if (string< (sorted-string-index--key-at index middle) query-key)
             do (setf low (1+ middle))
           else
             do (setf high middle))
@@ -198,7 +202,7 @@ Only the equal-key range is searched. Return NIL and NIL when no item matches."
         (high (sorted-string-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
-          if (string< query-key (sorted-string-index-key-ref index middle))
+          if (string< query-key (sorted-string-index--key-at index middle))
             do (setf high middle)
           else
             do (setf low (1+ middle)))
@@ -225,7 +229,7 @@ Only the equal-key range is searched. Return NIL and NIL when no item matches."
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
           for comparison = (sorted-string-index--prefix-compare
-                            (sorted-string-index-key-ref index middle)
+                            (sorted-string-index--key-at index middle)
                             prefix)
           if (if upper-p (<= comparison 0) (< comparison 0))
             do (setf low (1+ middle))
