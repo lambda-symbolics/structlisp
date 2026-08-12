@@ -15,7 +15,8 @@
                (:file "sorted-string-index")
                (:file "ordered-map")
                (:file "lru-cache")
-               (:file "interval"))
+               (:file "interval")
+               (:file "monotone-index"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"

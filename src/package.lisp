@@ -154,6 +154,30 @@
    #:integer-interval-map-map
    #:integer-interval-map->vector
    #:integer-interval-map-clear
+   ;; Monotone integer index
+   #:monotone-integer-index
+   #:make-monotone-integer-index
+   #:monotone-integer-index-count
+   #:monotone-integer-index-empty-p
+   #:monotone-integer-index-ref
+   #:monotone-integer-index-append
+   #:monotone-integer-index-lower-bound
+   #:monotone-integer-index-upper-bound
+   #:monotone-integer-index-find
+   #:monotone-integer-index-before
+   #:monotone-integer-index-at-or-before
+   #:monotone-integer-index-at-or-after
+   #:monotone-integer-index-after
+   #:monotone-integer-index-range
+   #:monotone-integer-index->vector
+   #:monotone-integer-index-clear
+   #:monotone-integer-index-error
+   #:monotone-integer-index-order-error
+   #:monotone-integer-index-order-error-value
+   #:monotone-integer-index-order-error-last-value
+   #:monotone-integer-index-value-error
+   #:monotone-integer-index-value-error-value
+   #:monotone-integer-index-value-error-maximum
    ;; Tests
    #:run-tests))
 

@@ -292,6 +292,42 @@
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))))
 
+
+(define-test test-monotone-integer-index-search
+  (let ((index (make-monotone-integer-index
+                :element-bits 32
+                :initial-contents '(1 3 3 8 13))))
+    (test-equal 1 (monotone-integer-index-lower-bound index 3))
+    (test-equal 3 (monotone-integer-index-upper-bound index 3))
+    (multiple-value-bind (position present-p)
+        (monotone-integer-index-find index 8)
+      (test-equal 3 position)
+      (assert present-p))
+    (multiple-value-bind (value position present-p)
+        (monotone-integer-index-at-or-before index 7)
+      (test-equal 3 value)
+      (test-equal 2 position)
+      (assert present-p))
+    (multiple-value-bind (value position present-p)
+        (monotone-integer-index-at-or-after index 4)
+      (test-equal 8 value)
+      (test-equal 3 position)
+      (assert present-p))))
+
+(define-test test-monotone-integer-index-failures
+  (let ((index (make-monotone-integer-index :element-bits 8
+                                             :initial-contents '(1 2))))
+    (handler-case
+        (progn
+          (monotone-integer-index-append index 0)
+          (error "Expected MONOTONE-INTEGER-INDEX-ORDER-ERROR."))
+      (monotone-integer-index-order-error ()))
+    (handler-case
+        (progn
+          (monotone-integer-index-append index 256)
+          (error "Expected MONOTONE-INTEGER-INDEX-VALUE-ERROR."))
+      (monotone-integer-index-value-error ()))))
+
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))
