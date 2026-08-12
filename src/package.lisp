@@ -27,6 +27,7 @@
    #:deque-clear
    #:deque->vector
    #:deque-error
+   #:deque-error-deque
    #:deque-index-error
    #:deque-index-error-index
    #:deque-index-error-minimum
@@ -48,6 +49,7 @@
    #:priority-queue-clear
    #:top-k
    #:priority-queue-error
+   #:priority-queue-error-queue
    #:priority-queue-duplicate-key
    #:priority-queue-duplicate-key-key
    ;; Sorted string index
@@ -67,6 +69,7 @@
    #:sorted-string-index-remove
    #:sorted-string-index->vector
    #:sorted-string-index-error
+   #:sorted-string-index-error-index
    #:sorted-string-index-key-error
    #:sorted-string-index-key-error-item
    #:sorted-string-index-key-error-key
@@ -107,6 +110,7 @@
    #:lru-cache-keys
    #:lru-cache-clear
    #:lru-cache-error
+   #:lru-cache-error-cache
    #:lru-cache-weight-error
    #:lru-cache-weight-error-key
    #:lru-cache-weight-error-value
@@ -172,6 +176,7 @@
    #:monotone-integer-index->vector
    #:monotone-integer-index-clear
    #:monotone-integer-index-error
+   #:monotone-integer-index-error-index
    #:monotone-integer-index-order-error
    #:monotone-integer-index-order-error-value
    #:monotone-integer-index-order-error-last-value
