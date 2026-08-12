@@ -265,8 +265,12 @@
 (define-test test-integer-interval-set-operations
   (let* ((left (make-integer-interval-set :intervals '((1 . 5) (8 . 10))))
          (right (make-integer-interval-set :intervals '((3 . 9))))
+         (union (integer-interval-set-union left right))
          (intersection (integer-interval-set-intersection left right))
          (difference (integer-interval-set-difference left right)))
+    (test-equal #((1 . 10))
+                (test-interval-pairs
+                 (integer-interval-set->vector union)))
     (test-equal #((3 . 5) (8 . 9))
                 (test-interval-pairs
                  (integer-interval-set->vector intersection)))
@@ -289,6 +293,22 @@
       (assert present-p))
     (integer-interval-map-delete map 4 8)
     (test-equal #((0 3 base) (3 4 middle) (8 10 base))
+                (test-interval-map-triples
+                 (integer-interval-map->vector map)))))
+
+
+(define-test test-integer-interval-map-linear-rewrites
+  (let ((map (make-integer-interval-map
+              :entries '((0 2 a) (2 4 a) (6 8 b)))))
+    (test-equal #((0 4 a) (6 8 b))
+                (test-interval-map-triples
+                 (integer-interval-map->vector map)))
+    (integer-interval-map-set map 4 6 'a)
+    (test-equal #((0 6 a) (6 8 b))
+                (test-interval-map-triples
+                 (integer-interval-map->vector map)))
+    (integer-interval-map-delete map 1 7)
+    (test-equal #((0 1 a) (7 8 b))
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))))
 

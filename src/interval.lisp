@@ -147,14 +147,37 @@
             end))))
 
 (defun integer-interval-set-union (left right)
-  "Return a fresh interval set containing the union of LEFT and RIGHT."
-  (let ((result (make-integer-interval-set
-                 :intervals (integer-interval-set-intervals left))))
-    (loop for interval across (integer-interval-set-intervals right)
-          do (integer-interval-set-add
-              result
-              (integer-interval-start interval)
-              (integer-interval-end interval)))
+  "Return a fresh interval set containing the union of LEFT and RIGHT.
+
+The canonical input vectors are merged in O(n + m) time."
+  (let ((result (integer-interval-set--make))
+        (intervals (make-array 0 :adjustable t :fill-pointer 0))
+        (left-position 0)
+        (right-position 0))
+    (loop while (or (< left-position (integer-interval-set-count left))
+                    (< right-position (integer-interval-set-count right)))
+          for take-left-p = (or (= right-position
+                                   (integer-interval-set-count right))
+                                (and (< left-position
+                                        (integer-interval-set-count left))
+                                     (<= (integer-interval-start
+                                          (aref (integer-interval-set-intervals left)
+                                                left-position))
+                                         (integer-interval-start
+                                          (aref (integer-interval-set-intervals right)
+                                                right-position)))))
+          for interval = (if take-left-p
+                             (prog1
+                                 (aref (integer-interval-set-intervals left)
+                                       left-position)
+                               (incf left-position))
+                             (prog1
+                                 (aref (integer-interval-set-intervals right)
+                                       right-position)
+                               (incf right-position)))
+          do (integer-interval-set--append-canonical intervals interval))
+    (setf (integer-interval-set-intervals result)
+          (coerce intervals 'simple-vector))
     result))
 
 (defun integer-interval-set-intersection (left right)
@@ -184,14 +207,51 @@
     result))
 
 (defun integer-interval-set-difference (left right)
-  "Return a fresh interval set containing LEFT minus RIGHT."
-  (let ((result (make-integer-interval-set
-                 :intervals (integer-interval-set-intervals left))))
-    (loop for interval across (integer-interval-set-intervals right)
-          do (integer-interval-set-remove
-              result
-              (integer-interval-start interval)
-              (integer-interval-end interval)))
+  "Return a fresh interval set containing LEFT minus RIGHT.
+
+The canonical input vectors are subtracted in O(n + m) time."
+  (let ((result (integer-interval-set--make))
+        (intervals (make-array 0 :adjustable t :fill-pointer 0))
+        (right-position 0))
+    (loop for left-interval across (integer-interval-set-intervals left)
+          for left-start = (integer-interval-start left-interval)
+          for left-end = (integer-interval-end left-interval)
+          do (loop while (and (< right-position
+                                  (integer-interval-set-count right))
+                              (<= (integer-interval-end
+                                   (aref (integer-interval-set-intervals right)
+                                         right-position))
+                                  left-start))
+                   do (incf right-position))
+             (let ((cursor left-start)
+                   (scan-position right-position))
+               (loop while (and (< scan-position
+                                    (integer-interval-set-count right))
+                                (< (integer-interval-start
+                                    (aref (integer-interval-set-intervals right)
+                                          scan-position))
+                                   left-end))
+                     for right-interval = (aref
+                                           (integer-interval-set-intervals right)
+                                           scan-position)
+                     for right-start = (integer-interval-start right-interval)
+                     for right-end = (integer-interval-end right-interval)
+                     do (when (> right-start cursor)
+                          (vector-push-extend
+                           (integer-interval--make
+                            cursor (min right-start left-end))
+                           intervals))
+                        (setf cursor (max cursor right-end))
+                        (when (>= cursor left-end)
+                          (return))
+                        (incf scan-position)
+                     finally (setf right-position scan-position))
+               (when (< cursor left-end)
+                 (vector-push-extend
+                  (integer-interval--make cursor left-end)
+                  intervals))))
+    (setf (integer-interval-set-intervals result)
+          (coerce intervals 'simple-vector))
     result))
 
 (defun integer-interval-set->vector (set)
@@ -253,54 +313,77 @@ When POINT is unmapped, return DEFAULT, NIL, NIL, and NIL."
         (values default nil nil nil))))
 
 (defun integer-interval-map-set (map start end value)
-  "Set every integer in [START, END) to VALUE and return MAP."
+  "Set every integer in [START, END) to VALUE and return MAP.
+
+The existing canonical vector is rewritten in O(n) time."
   (integer-interval--validate start end)
   (when (= start end)
     (return-from integer-interval-map-set map))
-  (let ((result nil))
+  (let ((result (make-array 0 :adjustable t :fill-pointer 0))
+        (inserted-p nil))
     (loop for entry across (integer-interval-map-entries map)
           for entry-start = (integer-interval-entry-start entry)
           for entry-end = (integer-interval-entry-end entry)
           do (cond
-               ((or (<= entry-end start) (>= entry-start end))
-                (push entry result))
+               ((<= entry-end start)
+                (integer-interval-map--append-canonical map result entry))
+               ((>= entry-start end)
+                (unless inserted-p
+                  (integer-interval-map--append-canonical
+                   map result
+                   (integer-interval-entry--make start end value))
+                  (setf inserted-p t))
+                (integer-interval-map--append-canonical map result entry))
                (t
                 (when (< entry-start start)
-                  (push (integer-interval-entry--make
-                         entry-start start (integer-interval-entry-value entry))
-                        result))
+                  (integer-interval-map--append-canonical
+                   map result
+                   (integer-interval-entry--make
+                    entry-start start (integer-interval-entry-value entry))))
+                (unless inserted-p
+                  (integer-interval-map--append-canonical
+                   map result
+                   (integer-interval-entry--make start end value))
+                  (setf inserted-p t))
                 (when (> entry-end end)
-                  (push (integer-interval-entry--make
-                         end entry-end (integer-interval-entry-value entry))
-                        result)))))
-    (push (integer-interval-entry--make start end value) result)
+                  (integer-interval-map--append-canonical
+                   map result
+                   (integer-interval-entry--make
+                    end entry-end (integer-interval-entry-value entry)))))))
+    (unless inserted-p
+      (integer-interval-map--append-canonical
+       map result (integer-interval-entry--make start end value)))
     (setf (integer-interval-map-entries map)
-          (integer-interval-map--canonicalize map result))
+          (coerce result 'simple-vector))
     map))
 
 (defun integer-interval-map-delete (map start end)
-  "Remove mappings in [START, END), splitting entries as needed, and return MAP."
+  "Remove mappings in [START, END), splitting entries as needed, and return MAP.
+
+The existing canonical vector is rewritten in O(n) time."
   (integer-interval--validate start end)
   (when (= start end)
     (return-from integer-interval-map-delete map))
-  (let ((result nil))
+  (let ((result (make-array 0 :adjustable t :fill-pointer 0)))
     (loop for entry across (integer-interval-map-entries map)
           for entry-start = (integer-interval-entry-start entry)
           for entry-end = (integer-interval-entry-end entry)
           do (cond
                ((or (<= entry-end start) (>= entry-start end))
-                (push entry result))
+                (integer-interval-map--append-canonical map result entry))
                (t
                 (when (< entry-start start)
-                  (push (integer-interval-entry--make
-                         entry-start start (integer-interval-entry-value entry))
-                        result))
+                  (integer-interval-map--append-canonical
+                   map result
+                   (integer-interval-entry--make
+                    entry-start start (integer-interval-entry-value entry))))
                 (when (> entry-end end)
-                  (push (integer-interval-entry--make
-                         end entry-end (integer-interval-entry-value entry))
-                        result)))))
+                  (integer-interval-map--append-canonical
+                   map result
+                   (integer-interval-entry--make
+                    end entry-end (integer-interval-entry-value entry)))))))
     (setf (integer-interval-map-entries map)
-          (integer-interval-map--canonicalize map result))
+          (coerce result 'simple-vector))
     map))
 
 (defun integer-interval-map-overlaps (map start end)
@@ -354,6 +437,20 @@ When POINT is unmapped, return DEFAULT, NIL, NIL, and NIL."
              (integer-interval-end interval)))
     (cons
      (values (first interval) (rest interval)))))
+
+(defun integer-interval-set--append-canonical (intervals interval)
+  (if (zerop (length intervals))
+      (vector-push-extend interval intervals)
+      (let ((previous (aref intervals (1- (length intervals)))))
+        (if (<= (integer-interval-start interval)
+                (integer-interval-end previous))
+            (setf (aref intervals (1- (length intervals)))
+                  (integer-interval--make
+                   (integer-interval-start previous)
+                   (max (integer-interval-end previous)
+                        (integer-interval-end interval))))
+            (vector-push-extend interval intervals))))
+  intervals)
 
 (defun integer-interval-set--candidate-position (set point)
   (let ((low 0)
@@ -409,21 +506,19 @@ When POINT is unmapped, return DEFAULT, NIL, NIL, and NIL."
             do (setf high middle))
     low))
 
-(defun integer-interval-map--canonicalize (map entries)
-  (let ((sorted (stable-sort entries #'< :key #'integer-interval-entry-start))
-        (result nil))
-    (dolist (entry sorted)
-      (let ((previous (first result)))
-        (if (and previous
-                 (= (integer-interval-entry-end previous)
+(defun integer-interval-map--append-canonical (map entries entry)
+  (if (zerop (length entries))
+      (vector-push-extend entry entries)
+      (let ((previous (aref entries (1- (length entries)))))
+        (if (and (= (integer-interval-entry-end previous)
                     (integer-interval-entry-start entry))
                  (funcall (integer-interval-map-value-test map)
                           (integer-interval-entry-value previous)
                           (integer-interval-entry-value entry)))
-            (setf (first result)
+            (setf (aref entries (1- (length entries)))
                   (integer-interval-entry--make
                    (integer-interval-entry-start previous)
                    (integer-interval-entry-end entry)
                    (integer-interval-entry-value previous)))
-            (push entry result))))
-    (coerce (nreverse result) 'simple-vector)))
+            (vector-push-extend entry entries))))
+  entries)
