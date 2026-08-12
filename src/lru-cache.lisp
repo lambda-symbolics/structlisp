@@ -169,14 +169,21 @@ entry whose own weight exceeds the budget is inserted and immediately evicted."
         (values default default nil))))
 
 (defun lru-cache-map (function cache)
-  "Call FUNCTION with key and value from least to most recent, then return CACHE."
-  (loop for node = (lru-cache-first-node cache)
-                  then next
-        while node
-        for next = (lru-cache-node-next node)
-        do (funcall function
-                    (lru-cache-node-key node)
-                    (lru-cache-node-value node)))
+  "Call FUNCTION with key and value from least to most recent, then return CACHE.
+
+Traversal uses a key/value snapshot taken before the first call. Mutating CACHE
+from FUNCTION does not alter which entries are visited or their values."
+  (let ((entries (make-array (lru-cache-count cache)))
+        (position 0))
+    (loop for node = (lru-cache-first-node cache)
+                    then (lru-cache-node-next node)
+          while node
+          do (setf (aref entries position)
+                   (cons (lru-cache-node-key node)
+                         (lru-cache-node-value node)))
+             (incf position))
+    (loop for entry across entries
+          do (funcall function (first entry) (rest entry))))
   cache)
 
 (defun lru-cache-keys (cache)

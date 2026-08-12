@@ -167,14 +167,21 @@ Return NIL and NIL when KEY is absent."
           (values (ordered-map-node-value node) t)))))
 
 (defun ordered-map-map (function map)
-  "Call FUNCTION with each key and value in MAP's order, then return MAP."
-  (loop for node = (ordered-map-first-node map)
-                  then next
-        while node
-        for next = (ordered-map-node-next node)
-        do (funcall function
-                    (ordered-map-node-key node)
-                    (ordered-map-node-value node)))
+  "Call FUNCTION with each key and value in MAP's order, then return MAP.
+
+Traversal uses a key/value snapshot taken before the first call. Mutating MAP
+from FUNCTION does not alter which entries are visited or their values."
+  (let ((entries (make-array (ordered-map-count map)))
+        (position 0))
+    (loop for node = (ordered-map-first-node map)
+                    then (ordered-map-node-next node)
+          while node
+          do (setf (aref entries position)
+                   (cons (ordered-map-node-key node)
+                         (ordered-map-node-value node)))
+             (incf position))
+    (loop for entry across entries
+          do (funcall function (first entry) (rest entry))))
   map)
 
 (defun ordered-map-keys (map)

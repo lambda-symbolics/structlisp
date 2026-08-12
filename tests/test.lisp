@@ -186,6 +186,19 @@
     (assert (ordered-map-empty-p map))))
 
 
+(define-test test-ordered-map-snapshot-traversal
+  (let ((map (make-ordered-map :initial-contents '((a . 1) (b . 2) (c . 3))))
+        (visited nil))
+    (ordered-map-map
+     (lambda (key value)
+       (push (cons key value) visited)
+       (when (eq key 'a)
+         (ordered-map-clear map)))
+     map)
+    (test-equal '((a . 1) (b . 2) (c . 3)) (nreverse visited))
+    (assert (ordered-map-empty-p map))))
+
+
 (define-test test-lru-cache-recency-and-count
   (let ((cache (make-lru-cache :maximum-count 2)))
     (lru-cache-put cache 'a 1)
@@ -211,6 +224,21 @@
     (test-equal #(b) (lru-cache-keys cache))
     (test-equal 3 (lru-cache-total-weight cache))
     (test-equal '((a . "aa")) evicted)))
+
+
+(define-test test-lru-cache-snapshot-traversal
+  (let ((cache (make-lru-cache))
+        (visited nil))
+    (lru-cache-put cache 'a 1)
+    (lru-cache-put cache 'b 2)
+    (lru-cache-map
+     (lambda (key value)
+       (push (cons key value) visited)
+       (when (eq key 'a)
+         (lru-cache-clear cache)))
+     cache)
+    (test-equal '((a . 1) (b . 2)) (nreverse visited))
+    (assert (lru-cache-empty-p cache))))
 
 (define-test test-memo-cache
   (let ((calls 0)
