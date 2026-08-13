@@ -10,6 +10,9 @@ Lisp.
   access, indexed insertion, removal, search, ordered append and transfer,
   maintained element weights, count- or weight-triggered eviction, and fresh
   list or vector snapshots.
+- A bounded sequence builder for strings and specialized or general vectors,
+  with exact and truncating range appends, fixed count and optional maintained
+  weight budgets, sticky overflow state, and detached snapshots or finish.
 - A stable binary min-heap with optional unique keys for cancellation and
   reprioritization, non-destructive stable priority-order snapshots, and
   O(n log k) top-K selection.
@@ -41,6 +44,37 @@ Run the tests with:
 
 #+begin_src lisp
 (asdf:test-system "structlisp")
+#+end_src
+
+* Bounded sequence builder
+
+The bounded sequence builder accumulates elements into adjustable internal
+storage without exceeding its fixed count limit or optional weight limit. Exact
+appends are atomic and signal =bounded-sequence-builder-overflow= when a range
+cannot fit. Truncating appends accept the longest fitting prefix, return the
+appended count and a true completion value only when the whole range fit, and
+set a sticky overflow state. They never signal the overflow condition, though
+invalid element types or weights still signal their documented errors.
+=snapshot= returns a detached vector; =finish= returns the same kind of result
+and clears the builder for reuse.
+
+A character builder finishes as a string. An octet builder finishes as a
+specialized vector when the implementation supports that specialization. A
+weight function can maintain byte, cost, or other client-defined budgets without
+parallel counters.
+Weight callbacks may inspect but not mutate their builder.
+
+#+begin_src lisp
+(let ((builder (structlisp:make-bounded-sequence-builder
+                80
+                :element-type 'character
+                :maximum-weight 80
+                :weight-function (constantly 1))))
+  (structlisp:bounded-sequence-builder-append-sequence
+   builder "result: ")
+  (structlisp:bounded-sequence-builder-append-sequence-truncating
+   builder long-text)
+  (structlisp:bounded-sequence-builder-finish builder))
 #+end_src
 
 * FIFO cache
