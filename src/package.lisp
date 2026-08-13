@@ -42,6 +42,39 @@
    #:deque-weight-error
    #:deque-weight-error-element
    #:deque-weight-error-weight
+   ;; Bounded sequence builder
+   #:bounded-sequence-builder
+   #:make-bounded-sequence-builder
+   #:bounded-sequence-builder-count
+   #:bounded-sequence-builder-remaining-capacity
+   #:bounded-sequence-builder-maximum-count
+   #:bounded-sequence-builder-total-weight
+   #:bounded-sequence-builder-maximum-weight
+   #:bounded-sequence-builder-remaining-weight
+   #:bounded-sequence-builder-weight-function
+   #:bounded-sequence-builder-element-type
+   #:bounded-sequence-builder-overflowed-p
+   #:bounded-sequence-builder-capacity
+   #:bounded-sequence-builder-append
+   #:bounded-sequence-builder-try-append
+   #:bounded-sequence-builder-append-sequence
+   #:bounded-sequence-builder-append-sequence-truncating
+   #:bounded-sequence-builder-snapshot
+   #:bounded-sequence-builder-finish
+   #:bounded-sequence-builder-clear
+   #:bounded-sequence-builder-overflow
+   #:bounded-sequence-builder-overflow-builder
+   #:bounded-sequence-builder-overflow-requested-count
+   #:bounded-sequence-builder-overflow-requested-weight
+   #:bounded-sequence-builder-overflow-remaining-capacity
+   #:bounded-sequence-builder-overflow-remaining-weight
+   #:bounded-sequence-builder-weight-error
+   #:bounded-sequence-builder-weight-error-builder
+   #:bounded-sequence-builder-weight-error-element
+   #:bounded-sequence-builder-weight-error-weight
+   #:bounded-sequence-builder-callback-mutation-error
+   #:bounded-sequence-builder-callback-mutation-error-builder
+   #:bounded-sequence-builder-callback-mutation-error-operation
    ;; Priority queue
    #:priority-queue
    #:make-priority-queue

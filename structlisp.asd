@@ -11,6 +11,7 @@
   :serial t
   :components ((:file "package")
                (:file "deque")
+               (:file "bounded-sequence-builder")
                (:file "priority-queue")
                (:file "sorted-string-index")
                (:file "ordered-map")
