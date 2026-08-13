@@ -26,12 +26,12 @@
    #:deque-split-at
    #:deque-clear
    #:deque->vector
-    #:deque->list
-    #:deque-position
-    #:deque-find
-    #:deque-delete
-    #:deque-append
-    #:deque-move-all
+   #:deque->list
+   #:deque-position
+   #:deque-find
+   #:deque-delete
+   #:deque-append
+   #:deque-move-all
    #:deque-error
    #:deque-error-deque
    #:deque-index-error
@@ -53,8 +53,8 @@
    #:priority-queue-cancel
    #:priority-queue-change-priority
    #:priority-queue-clear
-    #:priority-queue->vector
-    #:priority-queue->list
+   #:priority-queue->vector
+   #:priority-queue->list
    #:top-k
    #:priority-queue-error
    #:priority-queue-error-queue
