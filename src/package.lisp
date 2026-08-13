@@ -26,6 +26,10 @@
    #:deque-split-at
    #:deque-clear
    #:deque->vector
+    #:deque->list
+    #:deque-position
+    #:deque-find
+    #:deque-delete
    #:deque-error
    #:deque-error-deque
    #:deque-index-error

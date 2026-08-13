@@ -288,6 +288,50 @@ operation is linear in the suffix length."
           do (setf (aref result index) (deque-ref deque index)))
     result))
 
+(defun deque->list (deque)
+  "Return a fresh list containing DEQUE's elements from front to back."
+  (loop for index below (deque-count deque)
+        collect (deque-ref deque index)))
+
+(defun deque-position (item deque &key (key #'identity)
+                                       (test #'eql test-supplied-p)
+                                       (test-not nil test-not-supplied-p))
+  "Return the position of the first element matching ITEM and true.
+
+KEY is applied to each deque element before comparison. TEST and TEST-NOT have
+the same complementary semantics as their Common Lisp sequence counterparts
+and may not both be supplied. Return NIL and NIL when no element matches."
+  (deque--position item deque key test test-supplied-p
+                   test-not test-not-supplied-p))
+
+(defun deque-find (item deque &key (key #'identity)
+                                   (test #'eql test-supplied-p)
+                                   (test-not nil test-not-supplied-p))
+  "Return the first element matching ITEM and true, or NIL and NIL if absent.
+
+KEY, TEST, and TEST-NOT follow DEQUE-POSITION semantics. The presence value
+distinguishes a stored NIL element from absence."
+  (multiple-value-bind (index present-p)
+      (deque--position item deque key test test-supplied-p
+                       test-not test-not-supplied-p)
+    (if present-p
+        (values (deque-ref deque index) t)
+        (values nil nil))))
+
+(defun deque-delete (item deque &key (key #'identity)
+                                     (test #'eql test-supplied-p)
+                                     (test-not nil test-not-supplied-p))
+  "Remove and return the first element matching ITEM and true.
+
+KEY, TEST, and TEST-NOT follow DEQUE-POSITION semantics. Removal uses indexed
+shifting and maintains DEQUE's cached weight. Return NIL and NIL if absent."
+  (multiple-value-bind (index present-p)
+      (deque--position item deque key test test-supplied-p
+                       test-not test-not-supplied-p)
+    (if present-p
+        (values (deque-remove-at deque index) t)
+        (values nil nil))))
+
 
 ;;;; -- Internal mechanics --
 
@@ -305,6 +349,27 @@ operation is linear in the suffix length."
              :index index
              :minimum 0
              :maximum maximum))))
+
+
+(defun deque--position (item deque key test test-supplied-p
+                        test-not test-not-supplied-p)
+  (when (and test-supplied-p test-not-supplied-p)
+    (error "TEST and TEST-NOT may not both be supplied."))
+  (check-type key (or function symbol))
+  (check-type test (or function symbol))
+  (when test-not-supplied-p
+    (check-type test-not (or function symbol)))
+  (let ((key-function (coerce key 'function))
+        (test-function (coerce (if test-not-supplied-p test-not test)
+                               'function)))
+    (loop for index below (deque-count deque)
+          for element = (deque-ref deque index)
+          for matched-p = (funcall test-function
+                                   item
+                                   (funcall key-function element))
+          when (if test-not-supplied-p (not matched-p) matched-p)
+            do (return (values index t))
+          finally (return (values nil nil)))))
 
 (defun deque--element-weight (deque element)
   (let ((weight (if (deque-weight-function deque)
