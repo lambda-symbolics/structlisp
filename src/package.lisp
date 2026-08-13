@@ -53,6 +53,8 @@
    #:priority-queue-cancel
    #:priority-queue-change-priority
    #:priority-queue-clear
+    #:priority-queue->vector
+    #:priority-queue->list
    #:top-k
    #:priority-queue-error
    #:priority-queue-error-queue

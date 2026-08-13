@@ -259,6 +259,29 @@
           (error "Expected PRIORITY-QUEUE-DUPLICATE-KEY."))
       (priority-queue-duplicate-key ()))))
 
+(define-test test-priority-queue-snapshots
+  (let ((queue (make-priority-queue :lessp #'>)))
+    (priority-queue-push queue 'first-five 5)
+    (priority-queue-push queue nil 5)
+    (priority-queue-push queue 'ten 10)
+    (priority-queue-push queue 'one 1)
+    (test-equal #(ten first-five nil one) (priority-queue->vector queue))
+    (test-equal '(ten first-five nil one) (priority-queue->list queue))
+    (let ((vector-snapshot (priority-queue->vector queue))
+          (list-snapshot (priority-queue->list queue)))
+      (setf (aref vector-snapshot 0) 'changed
+            (first list-snapshot) 'changed)
+      (test-equal #(ten first-five nil one) (priority-queue->vector queue)))
+    (test-equal 'ten (priority-queue-pop queue))
+    (test-equal 'first-five (priority-queue-pop queue))
+    (multiple-value-bind (item priority key present-p)
+        (priority-queue-pop queue :missing)
+      (assert (null item))
+      (test-equal 5 priority)
+      (assert (null key))
+      (assert present-p))
+    (test-equal 'one (priority-queue-pop queue))))
+
 (define-test test-top-k
   (test-equal #(1 2 3) (top-k '(8 2 5 1 3 9) 3))
   (test-equal #((d . 1) (b . 2))

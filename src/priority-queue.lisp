@@ -156,6 +156,20 @@ Return NIL and NIL when KEY is absent. The second value is true on success."
   (clrhash (priority-queue-key-index queue))
   queue)
 
+(defun priority-queue->vector (queue)
+  "Return a fresh vector of QUEUE's items in non-destructive priority order.
+
+Items with equivalent priorities retain insertion order. Mutating the returned
+vector does not mutate QUEUE."
+  (let ((entries (copy-seq (priority-queue-storage queue))))
+    (sort entries (lambda (left right)
+                    (priority-queue--entry-before-p queue left right)))
+    (map 'vector #'priority-queue-entry-item entries)))
+
+(defun priority-queue->list (queue)
+  "Return a fresh list of QUEUE's items in non-destructive priority order."
+  (coerce (priority-queue->vector queue) 'list))
+
 (defun top-k (sequence count &key (key #'identity) (lessp #'<))
   "Return the best COUNT elements of SEQUENCE as a best-first vector.
 
