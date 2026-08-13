@@ -401,6 +401,374 @@
     (assert (ordered-map-empty-p map))))
 
 
+(define-test test-fifo-cache-order-and-nil-values
+  (let ((cache (make-fifo-cache :test 'equalp
+                                :initial-contents '(("One") ("two" . 2)))))
+    (multiple-value-bind (value present-p)
+        (fifo-cache-get cache "ONE" :missing)
+      (assert (null value))
+      (assert present-p))
+    (multiple-value-bind (value present-p)
+        (fifo-cache-peek cache "TWO" :missing)
+      (test-equal 2 value)
+      (assert present-p))
+    (test-equal #("One" "two") (fifo-cache-keys cache))
+    (fifo-cache-put cache "ONE" 1)
+    (test-equal '(("One" . 1) ("two" . 2))
+                (fifo-cache->alist cache))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-oldest cache)
+      (test-equal "One" key)
+      (test-equal 1 value)
+      (assert present-p))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-newest cache)
+      (test-equal "two" key)
+      (test-equal 2 value)
+      (assert present-p))
+    (fifo-cache-move-to-back cache "one")
+    (test-equal #("two" "One") (fifo-cache-keys cache))
+    (multiple-value-bind (value present-p)
+        (fifo-cache-delete cache "TWO")
+      (test-equal 2 value)
+      (assert present-p))
+    (multiple-value-bind (value present-p)
+        (fifo-cache-delete cache "missing" :absent)
+      (test-equal :absent value)
+      (assert (null present-p)))
+    (multiple-value-bind (value present-p)
+        (fifo-cache-move-to-back cache "missing" :absent)
+      (test-equal :absent value)
+      (assert (null present-p)))
+    (test-equal #(1) (fifo-cache-values cache)))
+  (let ((cache (make-fifo-cache)))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-oldest cache :empty)
+      (test-equal :empty key)
+      (test-equal :empty value)
+      (assert (null present-p)))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-newest cache :empty)
+      (test-equal :empty key)
+      (test-equal :empty value)
+      (assert (null present-p)))))
+
+(define-test test-fifo-cache-count-eviction-order
+  (let ((callbacks nil))
+    (let ((cache (make-fifo-cache
+                  :maximum-count 2
+                  :eviction-function (lambda (key value)
+                                       (push (cons key value) callbacks))
+                  :initial-contents '((a . 1) (b . 2) (c . 3)))))
+      (test-equal '((b . 2) (c . 3)) (fifo-cache->alist cache))
+      (test-equal '((a . 1)) (nreverse callbacks))
+      (setf callbacks nil)
+      (multiple-value-bind (value evicted)
+          (fifo-cache-put cache 'd 4)
+        (test-equal 4 value)
+        (test-equal #((b . 2)) evicted))
+      (test-equal '((b . 2)) (nreverse callbacks))
+      (test-equal '((c . 3) (d . 4)) (fifo-cache->alist cache)))))
+
+(define-test test-fifo-cache-budgets-and-callbacks
+  (let* ((callback-entries nil)
+         (cache (make-fifo-cache
+                 :maximum-count 3
+                 :maximum-weight 5
+                 :weight-function (lambda (key value)
+                                    (declare (ignore key))
+                                    (length value))
+                 :eviction-function (lambda (key value)
+                                      (push (cons key value)
+                                            callback-entries)))))
+    (fifo-cache-put cache 'a "aa")
+    (fifo-cache-put cache 'b "b")
+    (fifo-cache-put cache 'c "cc")
+    (multiple-value-bind (value evicted)
+        (fifo-cache-put cache 'd "ddd")
+      (test-equal "ddd" value)
+      (test-equal #((a . "aa") (b . "b")) evicted))
+    (test-equal '((c . "cc") (d . "ddd"))
+                (fifo-cache->alist cache))
+    (test-equal 2 (fifo-cache-count cache))
+    (test-equal 5 (fifo-cache-total-weight cache))
+    (multiple-value-bind (value evicted)
+        (fifo-cache-put cache 'c "123456")
+      (test-equal "123456" value)
+      (test-equal #((c . "123456")) evicted))
+    (test-equal '((d . "ddd")) (fifo-cache->alist cache))
+    (test-equal 3 (fifo-cache-total-weight cache))
+    (test-equal '((a . "aa") (b . "b") (c . "123456"))
+                (nreverse callback-entries)))
+  (let* ((callbacks 0)
+         (cache (make-fifo-cache :maximum-count 0
+                                 :eviction-function
+                                 (lambda (key value)
+                                   (declare (ignore key value))
+                                   (incf callbacks)))))
+    (multiple-value-bind (value evicted)
+        (fifo-cache-put cache 'nil-value nil)
+      (assert (null value))
+      (test-equal #((nil-value)) evicted))
+    (assert (fifo-cache-empty-p cache))
+    (test-equal 0 (fifo-cache-total-weight cache))
+    (test-equal 1 callbacks))
+  (let ((cache (make-fifo-cache
+                :maximum-weight 0
+                :weight-function (lambda (key value)
+                                   (declare (ignore key))
+                                   (length value)))))
+    (fifo-cache-put cache 'zero "")
+    (test-equal '((zero . "")) (fifo-cache->alist cache))
+    (multiple-value-bind (value evicted)
+        (fifo-cache-put cache 'heavy "x")
+      (test-equal "x" value)
+      (test-equal #((zero . "") (heavy . "x")) evicted))
+    (assert (fifo-cache-empty-p cache))))
+
+(define-test test-fifo-cache-key-value-weighting
+  (let ((cache (make-fifo-cache
+                :maximum-weight 4
+                :weight-function (lambda (key value)
+                                   (+ (length (symbol-name key))
+                                      (length value))))))
+    (fifo-cache-put cache 'a "xx")
+    (test-equal 3 (fifo-cache-total-weight cache))
+    (multiple-value-bind (value evicted)
+        (fifo-cache-put cache 'bb "")
+      (test-equal "" value)
+      (test-equal #((a . "xx")) evicted))
+    (test-equal '((bb . "")) (fifo-cache->alist cache))
+    (test-equal 2 (fifo-cache-total-weight cache))))
+
+(define-test test-fifo-cache-predicate-deletion
+  (let* ((callbacks 0)
+         (cache (make-fifo-cache
+                 :weight-function (lambda (key value)
+                                    (declare (ignore key))
+                                    (second value))
+                 :eviction-function (lambda (key value)
+                                      (declare (ignore key value))
+                                      (incf callbacks))
+                 :initial-contents
+                 '((a :alpha 2) (b :beta 3) (c :alpha 4)))))
+    (test-equal 9 (fifo-cache-total-weight cache))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-delete-first-if
+         (lambda (key value)
+           (declare (ignore key))
+           (eq :alpha (first value)))
+         cache)
+      (test-equal 'a key)
+      (test-equal '(:alpha 2) value)
+      (assert present-p))
+    (test-equal 7 (fifo-cache-total-weight cache))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-delete-first-if
+         (lambda (key value)
+           (declare (ignore value))
+           (eq key 'c))
+         cache)
+      (test-equal 'c key)
+      (test-equal '(:alpha 4) value)
+      (assert present-p))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-delete-first-if
+         (lambda (key value)
+           (declare (ignore key value))
+           nil)
+         cache)
+      (assert (null key))
+      (assert (null value))
+      (assert (null present-p)))
+    (test-equal '((b :beta 3)) (fifo-cache->alist cache))
+    (test-equal 3 (fifo-cache-total-weight cache))
+    (test-equal 0 callbacks)))
+
+(define-test test-fifo-cache-predicate-deletion-of-nil
+  (let ((cache (make-fifo-cache :initial-contents '((nil-key) (other . 2)))))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-delete-first-if
+         (lambda (key value)
+           (declare (ignore key))
+           (null value))
+         cache)
+      (test-equal 'nil-key key)
+      (assert (null value))
+      (assert present-p))
+    (test-equal '((other . 2)) (fifo-cache->alist cache))))
+
+(define-test test-fifo-cache-callback-mutation-guard
+  (let (cache)
+    (setf cache
+          (make-fifo-cache
+           :maximum-count 0
+           :eviction-function
+           (lambda (key value)
+             (declare (ignore key value))
+             (handler-case
+                 (progn
+                   (fifo-cache-put cache 'recursive 2)
+                   (error "Expected callback mutation failure."))
+               (fifo-cache-callback-mutation-error (condition)
+                 (assert (eq cache (fifo-cache-error-cache condition)))
+                 (test-equal :eviction
+                             (fifo-cache-callback-mutation-error-callback
+                              condition))
+                 (test-equal 'fifo-cache-put
+                             (fifo-cache-callback-mutation-error-operation
+                              condition)))))))
+    (fifo-cache-put cache 'outer 1)
+    (assert (fifo-cache-empty-p cache)))
+  (let ((cache (make-fifo-cache :initial-contents '((a . 1) (b . 2)))))
+    (handler-case
+        (fifo-cache-delete-first-if
+         (lambda (key value)
+           (declare (ignore key value))
+           (fifo-cache-clear cache)
+           t)
+         cache)
+      (fifo-cache-callback-mutation-error (condition)
+        (test-equal :predicate
+                    (fifo-cache-callback-mutation-error-callback condition))
+        (test-equal 'fifo-cache-clear
+                    (fifo-cache-callback-mutation-error-operation condition))))
+    (test-equal '((a . 1) (b . 2)) (fifo-cache->alist cache))))
+
+(define-test test-fifo-cache-eviction-callback-failures
+  (let ((calls nil))
+    (let ((cache (make-fifo-cache
+                  :maximum-weight 3
+                  :weight-function (lambda (key value)
+                                     (declare (ignore key))
+                                     value)
+                  :eviction-function
+                  (lambda (key value)
+                    (push (cons key value) calls)
+                    (when (member key '(a c))
+                      (error "Callback failed for ~S." key))))))
+      (fifo-cache-put cache 'a 1)
+      (fifo-cache-put cache 'b 1)
+      (fifo-cache-put cache 'c 1)
+      (handler-case
+          (progn
+            (fifo-cache-put cache 'c 4)
+            (error "Expected FIFO-CACHE-EVICTION-CALLBACK-ERROR."))
+        (fifo-cache-eviction-callback-error (condition)
+          (assert (eq cache (fifo-cache-error-cache condition)))
+          (test-equal #((a . 1) (b . 1) (c . 4))
+                      (fifo-cache-eviction-callback-error-evicted-entries
+                       condition))
+          (let ((failures
+                  (fifo-cache-eviction-callback-error-failures condition)))
+            (test-equal 2 (length failures))
+            (let ((first-failure  (aref failures 0))
+                  (second-failure (aref failures 1)))
+              (test-equal 0 (fifo-cache-callback-failure-index first-failure))
+              (test-equal 'a (fifo-cache-callback-failure-key first-failure))
+              (test-equal 1 (fifo-cache-callback-failure-value first-failure))
+              (test-equal 2 (fifo-cache-callback-failure-index second-failure))
+              (test-equal 'c (fifo-cache-callback-failure-key second-failure))
+              (test-equal 4 (fifo-cache-callback-failure-value second-failure))
+              (assert (typep (fifo-cache-callback-failure-condition first-failure)
+                             'error))
+              (assert (typep (fifo-cache-callback-failure-condition second-failure)
+                             'error))))))
+      (test-equal '((a . 1) (b . 1) (c . 4)) (nreverse calls))
+      (assert (fifo-cache-empty-p cache))
+      (test-equal 0 (fifo-cache-total-weight cache)))))
+
+(define-test test-fifo-cache-snapshot-traversal
+  (let ((cache (make-fifo-cache :initial-contents '((a . 1) (b . 2) (c . 3))))
+        (visited nil))
+    (let ((keys (fifo-cache-keys cache))
+          (values (fifo-cache-values cache))
+          (alist (fifo-cache->alist cache)))
+      (setf (aref keys 0) 'changed
+            (aref values 0) 99
+            (first (first alist)) 'changed)
+      (test-equal '((a . 1) (b . 2) (c . 3))
+                  (fifo-cache->alist cache)))
+    (fifo-cache-map
+     (lambda (key value)
+       (push (cons key value) visited)
+       (when (eq key 'a)
+         (fifo-cache-clear cache)
+         (fifo-cache-put cache 'new 4)))
+     cache)
+    (test-equal '((a . 1) (b . 2) (c . 3)) (nreverse visited))
+    (test-equal '((new . 4)) (fifo-cache->alist cache))))
+
+(define-test test-fifo-cache-invalid-weights
+  (dolist (invalid-weight '(-1 nil 1/2))
+    (let* ((cache (make-fifo-cache
+                   :maximum-weight 5
+                   :weight-function (lambda (key value)
+                                      (declare (ignore key value))
+                                      invalid-weight)))
+           (value (list invalid-weight)))
+      (handler-case
+          (progn
+            (fifo-cache-put cache 'key value)
+            (error "Expected FIFO-CACHE-WEIGHT-ERROR."))
+        (fifo-cache-weight-error (condition)
+          (assert (eq cache (fifo-cache-error-cache condition)))
+          (test-equal 'key (fifo-cache-weight-error-key condition))
+          (assert (eq value (fifo-cache-weight-error-value condition)))
+          (test-equal invalid-weight
+                      (fifo-cache-weight-error-weight condition))))
+      (assert (fifo-cache-empty-p cache))
+      (test-equal 0 (fifo-cache-total-weight cache))))
+  (let ((invalid-p nil))
+    (let ((cache (make-fifo-cache
+                  :maximum-weight 10
+                  :weight-function
+                  (lambda (key value)
+                    (declare (ignore key))
+                    (if invalid-p -1 (length value))))))
+      (fifo-cache-put cache 'stable "ok")
+      (setf invalid-p t)
+      (handler-case
+          (progn
+            (fifo-cache-put cache 'stable "replacement")
+            (error "Expected invalid update weight."))
+        (fifo-cache-weight-error ()))
+      (multiple-value-bind (value present-p)
+          (fifo-cache-get cache 'stable)
+        (test-equal "ok" value)
+        (assert present-p))
+      (test-equal 2 (fifo-cache-total-weight cache)))))
+
+(define-test test-fifo-cache-rollover-and-lifecycle
+  (let ((cache (make-fifo-cache :maximum-count 3 :test 'equalp)))
+    (dotimes (index 100)
+      (fifo-cache-put cache (format nil "~D" index) index)
+      (assert (<= (fifo-cache-count cache) 3)))
+    (test-equal #("97" "98" "99") (fifo-cache-keys cache))
+    (fifo-cache-put cache "98" :updated)
+    (test-equal #("97" "98" "99") (fifo-cache-keys cache))
+    (fifo-cache-move-to-back cache "97")
+    (test-equal #("98" "99" "97") (fifo-cache-keys cache))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-pop-oldest cache)
+      (test-equal "98" key)
+      (test-equal :updated value)
+      (assert present-p))
+    (fifo-cache-clear cache)
+    (assert (fifo-cache-empty-p cache))
+    (fifo-cache-put cache "again" nil)
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-pop-oldest cache)
+      (test-equal "again" key)
+      (assert (null value))
+      (assert present-p))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-pop-oldest cache :empty)
+      (test-equal :empty key)
+      (test-equal :empty value)
+      (assert (null present-p)))))
+
+
 (define-test test-lru-cache-recency-and-count
   (let ((cache (make-lru-cache :maximum-count 2)))
     (lru-cache-put cache 'a 1)
