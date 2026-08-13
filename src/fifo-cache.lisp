@@ -276,6 +276,19 @@ not allocate an order snapshot."
           (values entry-key (fifo-cache-entry-value entry) t))
         (values nil nil nil))))
 
+(defun fifo-cache-find-if (predicate cache &optional default)
+  "Return the first key, value, and true satisfying PREDICATE.
+
+PREDICATE receives each key and value in insertion order. It may inspect but not
+mutate CACHE. When no entry matches, return DEFAULT, DEFAULT, and NIL."
+  (block nil
+    (fifo-cache-map
+     (lambda (key value)
+       (when (fifo-cache--call-client cache :predicate predicate key value)
+         (return (values key value t))))
+     cache)
+    (values default default nil)))
+
 (defun fifo-cache-move-to-back (cache key &optional default)
   "Move KEY to the newest position and return its value and true.
 

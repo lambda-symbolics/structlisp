@@ -486,6 +486,31 @@
                     (fifo-cache-callback-mutation-error-operation condition))))
     (test-equal '((a . 1)) (fifo-cache->alist cache))))
 
+(define-test test-fifo-cache-find-if
+  (let ((cache (make-fifo-cache
+                :initial-contents '((a . 1) (b . 2) (c . 4)))))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-find-if
+         (lambda (key value)
+           (declare (ignore key))
+           (evenp value))
+         cache)
+      (test-equal 'b key)
+      (test-equal 2 value)
+      (assert present-p))
+    (multiple-value-bind (key value present-p)
+        (fifo-cache-find-if
+         (lambda (key value)
+           (declare (ignore key value))
+           nil)
+         cache
+         :absent)
+      (test-equal :absent key)
+      (test-equal :absent value)
+      (assert (null present-p)))
+    (test-equal '((a . 1) (b . 2) (c . 4))
+                (fifo-cache->alist cache))))
+
 (define-test test-fifo-cache-count-eviction-order
   (let ((callbacks nil))
     (let ((cache (make-fifo-cache

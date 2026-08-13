@@ -118,6 +118,7 @@
    #:fifo-cache-newest
    #:fifo-cache-pop-oldest
    #:fifo-cache-delete-first-if
+   #:fifo-cache-find-if
    #:fifo-cache-move-to-back
    #:fifo-cache-map
    #:fifo-cache-keys
