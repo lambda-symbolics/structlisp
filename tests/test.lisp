@@ -118,6 +118,20 @@
                                       :test #'equalp)
       (test-equal 3 position)
       (assert present-p))
+    (multiple-value-bind (position present-p)
+        (deque-position 5
+                        (make-deque :initial-contents '((3 low) (7 high)))
+                        :key #'first
+                        :test #'<)
+      (test-equal 1 position)
+      (assert present-p))
+    (multiple-value-bind (position present-p)
+        (deque-position 5
+                        (make-deque :initial-contents '((3 low) (7 high)))
+                        :key #'first
+                        :test-not #'<)
+      (test-equal 0 position)
+      (assert present-p))
     (multiple-value-bind (element present-p) (deque-find nil deque)
       (assert (null element))
       (assert present-p))
@@ -139,11 +153,11 @@
     (deque-pop-front deque)
     (deque-push-back deque "ee")
     (multiple-value-bind (element present-p)
-        (deque-delete "BB" deque :test #'string-equal)
-      (test-equal "bb" element)
+        (deque-delete "CCC" deque :test #'string-equal)
+      (test-equal "ccc" element)
       (assert present-p))
-    (test-equal '("ccc" "dddd" "ee") (deque->list deque))
-    (test-equal 9 (deque-total-weight deque))
+    (test-equal '("bb" "dddd" "ee") (deque->list deque))
+    (test-equal 8 (deque-total-weight deque))
     (multiple-value-bind (element present-p)
         (deque-delete "missing" deque :test #'string=)
       (assert (null element))
@@ -152,7 +166,7 @@
     (multiple-value-bind (element present-p) (deque-delete nil deque)
       (assert (null element))
       (assert present-p))
-    (test-equal '("ccc" "dddd" "ee") (deque->list deque))))
+    (test-equal '("bb" "dddd" "ee") (deque->list deque))))
 
 (define-test test-deque-append
   (let ((target (make-deque :initial-capacity 3
