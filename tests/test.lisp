@@ -453,6 +453,39 @@
       (test-equal :empty value)
       (assert (null present-p)))))
 
+(define-test test-fifo-cache-count-if
+  (let ((cache (make-fifo-cache
+                :initial-contents '((a . 1) (b . 2) (c . 3) (d . 4)))))
+    (test-equal 2
+                (fifo-cache-count-if
+                 (lambda (key value)
+                   (declare (ignore key))
+                   (evenp value))
+                 cache))
+    (test-equal '((a . 1) (b . 2) (c . 3) (d . 4))
+                (fifo-cache->alist cache)))
+  (let (cache)
+    (setf cache
+          (make-fifo-cache
+           :initial-contents '((a . 1))
+           :weight-function
+           (lambda (key value)
+             (declare (ignore key value))
+             0)))
+    (handler-case
+        (fifo-cache-count-if
+         (lambda (key value)
+           (declare (ignore key value))
+           (fifo-cache-delete cache 'a)
+           t)
+         cache)
+      (fifo-cache-callback-mutation-error (condition)
+        (test-equal :predicate
+                    (fifo-cache-callback-mutation-error-callback condition))
+        (test-equal 'fifo-cache-delete
+                    (fifo-cache-callback-mutation-error-operation condition))))
+    (test-equal '((a . 1)) (fifo-cache->alist cache))))
+
 (define-test test-fifo-cache-count-eviction-order
   (let ((callbacks nil))
     (let ((cache (make-fifo-cache

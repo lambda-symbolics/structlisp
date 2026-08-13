@@ -106,6 +106,7 @@
    #:make-fifo-cache
    #:fifo-cache-count
    #:fifo-cache-empty-p
+   #:fifo-cache-count-if
    #:fifo-cache-total-weight
    #:fifo-cache-maximum-count
    #:fifo-cache-maximum-weight

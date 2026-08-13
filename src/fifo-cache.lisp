@@ -138,6 +138,24 @@ positive-weight entries or, for a zero count limit, no entries at all."
   "Return true when CACHE contains no entries."
   (zerop (fifo-cache-count cache)))
 
+(defun fifo-cache-count-if (predicate cache)
+  "Return the number of CACHE entries satisfying PREDICATE.
+
+PREDICATE receives each key and value in insertion order. It may inspect but not
+mutate CACHE. The count does not change insertion order."
+  (let ((count 0))
+    (ordered-map-map
+     (lambda (key entry)
+       (when (fifo-cache--call-client
+              cache
+              :predicate
+              predicate
+              key
+              (fifo-cache-entry-value entry))
+         (incf count)))
+     (fifo-cache--slot-entries cache))
+    count))
+
 (defun fifo-cache-total-weight (cache)
   "Return CACHE's maintained sum of entry weights."
   (fifo-cache--slot-total-weight cache))
