@@ -26,7 +26,8 @@
   :depends-on ("structlisp")
   :pathname "tests"
   :serial t
-  :components ((:file "test"))
+  :components ((:file "test")
+               (:file "bounded-sequence-builder-test"))
   :perform (test-op (operation component)
              (declare (ignore operation component))
              (unless (uiop:symbol-call '#:structlisp '#:run-tests)
