@@ -14,6 +14,7 @@
                (:file "priority-queue")
                (:file "sorted-string-index")
                (:file "ordered-map")
+               (:file "fifo-cache")
                (:file "lru-cache")
                (:file "interval")
                (:file "monotone-index"))

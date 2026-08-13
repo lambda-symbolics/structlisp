@@ -97,6 +97,25 @@ PREDICATE receives each key and value from a snapshot in insertion order."
    map)
   map)
 
+(defun ordered-map--delete-first-if (predicate map)
+  "Delete the first entry satisfying PREDICATE and return key, value, and true.
+
+PREDICATE receives each key and value in order. The caller must prevent mutation
+of MAP during the callback. When no entry matches, return NIL, NIL, and NIL.
+The search does not allocate an order snapshot."
+  (loop for node = (ordered-map-first-node map)
+                   then (ordered-map-node-next node)
+        while node
+        when (funcall predicate
+                      (ordered-map-node-key node)
+                      (ordered-map-node-value node))
+          do (let ((key   (ordered-map-node-key node))
+                   (value (ordered-map-node-value node)))
+               (ordered-map--unlink-node map node)
+               (remhash key (ordered-map-table map))
+               (return (values key value t)))
+        finally (return (values nil nil nil))))
+
 (defun ordered-map-first (map &optional default)
   "Return the first key, value, and true, or DEFAULT, DEFAULT, and NIL."
   (let ((node (ordered-map-first-node map)))

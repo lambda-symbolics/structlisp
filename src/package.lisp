@@ -101,6 +101,45 @@
    #:ordered-map-values
    #:ordered-map->alist
    #:ordered-map-clear
+   ;; FIFO cache
+   #:fifo-cache
+   #:make-fifo-cache
+   #:fifo-cache-count
+   #:fifo-cache-empty-p
+   #:fifo-cache-total-weight
+   #:fifo-cache-maximum-count
+   #:fifo-cache-maximum-weight
+   #:fifo-cache-get
+   #:fifo-cache-peek
+   #:fifo-cache-put
+   #:fifo-cache-delete
+   #:fifo-cache-oldest
+   #:fifo-cache-newest
+   #:fifo-cache-pop-oldest
+   #:fifo-cache-delete-first-if
+   #:fifo-cache-move-to-back
+   #:fifo-cache-map
+   #:fifo-cache-keys
+   #:fifo-cache-values
+   #:fifo-cache->alist
+   #:fifo-cache-clear
+   #:fifo-cache-error
+   #:fifo-cache-error-cache
+   #:fifo-cache-weight-error
+   #:fifo-cache-weight-error-key
+   #:fifo-cache-weight-error-value
+   #:fifo-cache-weight-error-weight
+   #:fifo-cache-callback-mutation-error
+   #:fifo-cache-callback-mutation-error-callback
+   #:fifo-cache-callback-mutation-error-operation
+   #:fifo-cache-eviction-callback-error
+   #:fifo-cache-eviction-callback-error-evicted-entries
+   #:fifo-cache-eviction-callback-error-failures
+   #:fifo-cache-callback-failure
+   #:fifo-cache-callback-failure-index
+   #:fifo-cache-callback-failure-key
+   #:fifo-cache-callback-failure-value
+   #:fifo-cache-callback-failure-condition
    ;; LRU and memo caches
    #:lru-cache
    #:make-lru-cache
