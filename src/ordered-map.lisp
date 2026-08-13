@@ -86,6 +86,17 @@ its insertion position."
           (remhash key (ordered-map-table map))
           (values (ordered-map-node-value node) t)))))
 
+(defun ordered-map-delete-if (predicate map)
+  "Delete entries satisfying PREDICATE and return MAP.
+
+PREDICATE receives each key and value from a snapshot in insertion order."
+  (ordered-map-map
+   (lambda (key value)
+     (when (funcall predicate key value)
+       (ordered-map-delete map key)))
+   map)
+  map)
+
 (defun ordered-map-first (map &optional default)
   "Return the first key, value, and true, or DEFAULT, DEFAULT, and NIL."
   (let ((node (ordered-map-first-node map)))

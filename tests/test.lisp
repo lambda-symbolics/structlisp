@@ -376,6 +376,17 @@
       (assert present-p))
     (assert (ordered-map-empty-p map))))
 
+(define-test test-ordered-map-predicate-deletion
+  (let ((map (make-ordered-map
+              :initial-contents '((a . 1) (b . 2) (c . 3) (d . 4)))))
+    (assert (eq (ordered-map-delete-if
+                 (lambda (key value)
+                   (declare (ignore key))
+                   (evenp value))
+                 map)
+                map))
+    (test-equal '((a . 1) (c . 3)) (ordered-map->alist map))))
+
 
 (define-test test-ordered-map-snapshot-traversal
   (let ((map (make-ordered-map :initial-contents '((a . 1) (b . 2) (c . 3))))

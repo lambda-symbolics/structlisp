@@ -89,6 +89,7 @@
    #:ordered-map-get
    #:ordered-map-set
    #:ordered-map-delete
+   #:ordered-map-delete-if
    #:ordered-map-first
    #:ordered-map-last
    #:ordered-map-pop-first
