@@ -30,6 +30,8 @@
     #:deque-position
     #:deque-find
     #:deque-delete
+    #:deque-append
+    #:deque-move-all
    #:deque-error
    #:deque-error-deque
    #:deque-index-error

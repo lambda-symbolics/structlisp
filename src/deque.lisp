@@ -332,6 +332,40 @@ shifting and maintains DEQUE's cached weight. Return NIL and NIL if absent."
         (values (deque-remove-at deque index) t)
         (values nil nil))))
 
+(defun deque-append (deque sequence)
+  "Append SEQUENCE's elements to DEQUE in order.
+
+SEQUENCE may be another deque or a Common Lisp sequence. Traversal uses a
+snapshot, so DEQUE may also be the source. Return DEQUE and, as a second value,
+a vector containing all policy-evicted elements in removal order."
+  (let ((elements (if (deque-p sequence)
+                      (deque->vector sequence)
+                      (coerce sequence 'vector)))
+        (evicted (make-array 0 :adjustable t :fill-pointer 0)))
+    (loop for element across elements
+          do (multiple-value-bind (ignored newly-evicted)
+                 (deque-push-back deque element)
+               (declare (ignore ignored))
+               (loop for evicted-element across newly-evicted
+                     do (vector-push-extend evicted-element evicted))))
+    (values deque (coerce evicted 'simple-vector))))
+
+(defun deque-move-all (source target)
+  "Move every element from SOURCE to TARGET in front-to-back order.
+
+TARGET applies its own weight function and eviction policy. Return TARGET and,
+as a second value, a vector containing all policy-evicted elements in removal
+order. On success SOURCE is empty with zero maintained weight. Moving a deque
+to itself is a no-op."
+  (when (eq source target)
+    (return-from deque-move-all (values target #())))
+  (let ((elements (deque->vector source)))
+    (loop for element across elements
+          do (deque--element-weight target element))
+    (multiple-value-bind (result evicted) (deque-append target elements)
+      (deque-clear source)
+      (values result evicted))))
+
 
 ;;;; -- Internal mechanics --
 

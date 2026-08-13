@@ -154,6 +154,59 @@
       (assert present-p))
     (test-equal '("ccc" "dddd" "ee") (deque->list deque))))
 
+(define-test test-deque-append
+  (let ((target (make-deque :initial-capacity 3
+                            :initial-contents '(a b))))
+    (multiple-value-bind (result evicted)
+        (deque-append target #(c nil))
+      (assert (eq target result))
+      (test-equal #() evicted))
+    (test-equal '(a b c nil) (deque->list target))
+    (deque-append target target)
+    (test-equal '(a b c nil a b c nil) (deque->list target))))
+
+(define-test test-deque-move-all
+  (let ((source (make-deque :initial-capacity 4
+                            :initial-contents '("a" "bb" "ccc")
+                            :weight-function #'length))
+        (target (make-deque :initial-contents '("old")
+                            :maximum-count 3
+                            :maximum-weight 7
+                            :weight-function #'length)))
+    (deque-pop-front source)
+    (deque-push-back source "d")
+    (multiple-value-bind (result evicted)
+        (deque-move-all source target)
+      (assert (eq target result))
+      (test-equal #("old" "bb") evicted))
+    (assert (deque-empty-p source))
+    (test-equal 0 (deque-total-weight source))
+    (test-equal '("ccc" "d") (deque->list target))
+    (test-equal 4 (deque-total-weight target)))
+  (let ((source (make-deque :initial-contents '(1 nil 2)))
+        (target (make-deque)))
+    (deque-move-all source target)
+    (test-equal '(1 nil 2) (deque->list target))
+    (assert (deque-empty-p source)))
+  (let ((deque (make-deque :initial-contents '(a b))))
+    (multiple-value-bind (result evicted) (deque-move-all deque deque)
+      (assert (eq deque result))
+      (test-equal #() evicted))
+    (test-equal '(a b) (deque->list deque))))
+
+(define-test test-deque-move-all-validates-target-weights
+  (let ((source (make-deque :initial-contents '(good bad)))
+        (target (make-deque
+                 :weight-function (lambda (element)
+                                    (if (eq element 'bad) -1 1)))))
+    (handler-case
+        (progn
+          (deque-move-all source target)
+          (error "Expected target weight validation to fail."))
+      (deque-weight-error ()))
+    (test-equal '(good bad) (deque->list source))
+    (assert (deque-empty-p target))))
+
 (define-test test-deque-failures
   (let ((deque (make-deque)))
     (assert (null (nth-value 1 (deque-pop-front deque :empty))))
