@@ -27,6 +27,8 @@
    #:deque-clear
    #:deque->vector
    #:deque->list
+   #:deque-copy
+   #:deque-position-if
    #:deque-position
    #:deque-find
    #:deque-delete

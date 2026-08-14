@@ -293,6 +293,50 @@ operation is linear in the suffix length."
   (loop for index below (deque-count deque)
         collect (deque-ref deque index)))
 
+(defun deque-copy (deque)
+  "Return an independent deque preserving DEQUE's contents and configuration."
+  (%make-deque :storage (copy-seq (deque-storage deque))
+               :weights (and (deque-weights deque)
+                             (copy-seq (deque-weights deque)))
+               :start (deque-start deque)
+               :count (deque-count deque)
+               :total-weight (deque-total-weight deque)
+               :maximum-count (deque-maximum-count deque)
+               :maximum-weight (deque-maximum-weight deque)
+               :weight-function (deque-weight-function deque)
+               :eviction-end (deque-eviction-end deque)))
+
+(defun deque-position-if (predicate deque &key from-end
+                                               (start 0)
+                                               end
+                                               (key #'identity))
+  "Return the position of the first element satisfying PREDICATE and true.
+
+Search the half-open range from START through END, which defaults to the deque
+count. FROM-END reverses the search direction. KEY is applied to each element
+before PREDICATE. Return NIL and NIL when no element matches."
+  (check-type predicate (or function symbol))
+  (check-type key (or function symbol))
+  (check-type start (integer 0 *))
+  (check-type end (or null (integer 0 *)))
+  (let ((end (or end (deque-count deque))))
+    (unless (<= start end (deque-count deque))
+      (error "Deque search range [~D, ~D) exceeds count ~D."
+             start end (deque-count deque)))
+    (let ((predicate-function (coerce predicate 'function))
+          (key-function (coerce key 'function)))
+      (if from-end
+          (loop for index downfrom (1- end) to start
+                when (funcall predicate-function
+                              (funcall key-function (deque-ref deque index)))
+                  do (return (values index t))
+                finally (return (values nil nil)))
+          (loop for index from start below end
+                when (funcall predicate-function
+                              (funcall key-function (deque-ref deque index)))
+                  do (return (values index t))
+                finally (return (values nil nil)))))))
+
 (defun deque-position (item deque &key (key #'identity)
                                        (test #'eql test-supplied-p)
                                        (test-not nil test-not-supplied-p))

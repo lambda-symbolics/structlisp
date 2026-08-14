@@ -146,6 +146,45 @@
           (error "Expected conflicting deque tests to fail."))
       (error ()))))
 
+(define-test test-deque-copy-and-predicate-position
+  (let* ((source (make-deque :initial-capacity 9
+                             :initial-contents '(1 2 3 4)
+                             :maximum-count 6
+                             :maximum-weight 20
+                             :weight-function #'identity
+                             :eviction-end :back))
+         (copy (deque-copy source)))
+    (assert (not (eq source copy)))
+    (test-equal #(1 2 3 4) (deque->vector copy))
+    (test-equal (deque-capacity source) (deque-capacity copy))
+    (test-equal 6 (deque-maximum-count copy))
+    (test-equal 20 (deque-maximum-weight copy))
+    (assert (eq (deque-weight-function source)
+                (deque-weight-function copy)))
+    (test-equal :back (deque-eviction-end copy))
+    (deque-pop-front copy)
+    (test-equal '(1 2 3 4) (deque->list source))
+    (multiple-value-bind (position present-p)
+        (deque-position-if #'evenp source :start 1 :end 4 :from-end t)
+      (test-equal 3 position)
+      (assert present-p))
+    (multiple-value-bind (position present-p)
+        (deque-position-if (lambda (value) (> value 4))
+                           source
+                           :key (lambda (value) (* value 2))
+                           :end 3)
+      (test-equal 2 position)
+      (assert present-p))
+    (assert (null (nth-value 1
+                            (deque-position-if #'oddp source
+                                               :start 1
+                                               :end 2))))
+    (handler-case
+        (progn
+          (deque-position-if #'identity source :start 3 :end 2)
+          (error "Expected invalid deque search range to fail."))
+      (error ()))))
+
 (define-test test-deque-delete
   (let ((deque (make-deque :initial-capacity 4
                            :initial-contents '("a" "bb" "ccc" "dddd")
