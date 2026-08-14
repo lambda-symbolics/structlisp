@@ -193,6 +193,25 @@ overflowed, and return NIL without signaling BOUNDED-SEQUENCE-BUILDER-OVERFLOW."
     (bounded-sequence-builder--append-element builder element weight)
     t))
 
+(defun bounded-sequence-builder-try-append-sequence
+    (builder sequence &key (start 0) end)
+  "Append the START to END range of SEQUENCE when both budgets permit it.
+
+Return true on success. Otherwise leave contents unchanged, mark BUILDER
+overflowed, and return NIL without signaling BOUNDED-SEQUENCE-BUILDER-OVERFLOW."
+  (bounded-sequence-builder--ensure-mutable
+   builder 'bounded-sequence-builder-try-append-sequence)
+  (multiple-value-bind (snapshot count)
+      (bounded-sequence-builder--range-snapshot sequence start end)
+    (let ((weight (bounded-sequence-builder--range-weight
+                   builder snapshot 0 count)))
+      (unless (bounded-sequence-builder--fits-p builder count weight)
+        (setf (%bounded-sequence-builder-overflowed-p builder) t)
+        (return-from bounded-sequence-builder-try-append-sequence nil))
+      (bounded-sequence-builder--append-range
+       builder snapshot 0 count weight)
+      t)))
+
 (defun bounded-sequence-builder-append-sequence (builder sequence
                                                  &key (start 0) end)
   "Append the START to END range of SEQUENCE atomically to BUILDER.
@@ -202,14 +221,14 @@ range cannot fit under both budgets, mark BUILDER overflowed and signal
 BOUNDED-SEQUENCE-BUILDER-OVERFLOW without changing accumulated contents."
   (bounded-sequence-builder--ensure-mutable
    builder 'bounded-sequence-builder-append-sequence)
-  (multiple-value-bind (start end count)
-      (bounded-sequence-builder--range sequence start end)
+  (multiple-value-bind (snapshot count)
+      (bounded-sequence-builder--range-snapshot sequence start end)
     (let ((weight (bounded-sequence-builder--range-weight
-                   builder sequence start end)))
+                   builder snapshot 0 count)))
       (unless (bounded-sequence-builder--fits-p builder count weight)
         (bounded-sequence-builder--signal-overflow builder count weight))
       (bounded-sequence-builder--append-range
-       builder sequence start end weight)
+       builder snapshot 0 count weight)
       count)))
 
 (defun bounded-sequence-builder-append-sequence-truncating
@@ -221,18 +240,16 @@ fit. If elements are omitted, mark BUILDER overflowed. This operation never
 signals BOUNDED-SEQUENCE-BUILDER-OVERFLOW."
   (bounded-sequence-builder--ensure-mutable
    builder 'bounded-sequence-builder-append-sequence-truncating)
-  (multiple-value-bind (start end count)
-      (bounded-sequence-builder--range sequence start end)
+  (multiple-value-bind (snapshot count)
+      (bounded-sequence-builder--range-snapshot sequence start end)
     (multiple-value-bind (append-end weight)
-        (bounded-sequence-builder--fitting-range-end
-         builder sequence start end)
-      (let* ((appended-count (- append-end start))
-             (complete-p (= appended-count count)))
+        (bounded-sequence-builder--fitting-range-end builder snapshot 0 count)
+      (let ((complete-p (= append-end count)))
         (bounded-sequence-builder--append-range
-         builder sequence start append-end weight)
+         builder snapshot 0 append-end weight)
         (unless complete-p
           (setf (%bounded-sequence-builder-overflowed-p builder) t))
-        (values appended-count complete-p)))))
+        (values append-end complete-p)))))
 
 (defun bounded-sequence-builder-snapshot (builder)
   "Return a fresh vector containing BUILDER's accumulated elements.
@@ -284,8 +301,8 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
            :builder builder :operation operation)))
 
 
-(defun bounded-sequence-builder--range (sequence start end)
-  "Validate a sequence range and return START, effective END, and its length."
+(defun bounded-sequence-builder--range-snapshot (sequence start end)
+  "Validate and detach a sequence range, returning its snapshot and length."
   (check-type start (integer 0 *))
   (check-type end (or null (integer 0 *)))
   (let* ((length (length sequence))
@@ -295,7 +312,7 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
              :datum         (list start end)
              :expected-type `(cons (integer 0 ,length)
                                    (cons (integer ,start ,length) null))))
-    (values start end (- end start))))
+    (values (subseq sequence start end) (- end start))))
 
 (defun bounded-sequence-builder--check-element (builder element)
   "Signal TYPE-ERROR unless ELEMENT satisfies BUILDER's requested element type."
@@ -379,12 +396,17 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
          (new-count (+ old-count count)))
     (bounded-sequence-builder--ensure-capacity builder new-count)
     (let ((storage (%bounded-sequence-builder-storage builder)))
-      (setf (fill-pointer storage) new-count)
-      (replace storage sequence
-               :start1 old-count
-               :end1   new-count
-               :start2 start
-               :end2   end))
+      (handler-case
+          (progn
+            (setf (fill-pointer storage) new-count)
+            (replace storage sequence
+                     :start1 old-count
+                     :end1   new-count
+                     :start2 start
+                     :end2   end))
+        (error (condition)
+          (setf (fill-pointer storage) old-count)
+          (error condition))))
     (incf (%bounded-sequence-builder-total-weight builder) weight)))
 
 (defun bounded-sequence-builder--fitting-range-end

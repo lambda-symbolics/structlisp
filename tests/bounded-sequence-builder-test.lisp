@@ -99,6 +99,82 @@
     (test-equal 0 (bounded-sequence-builder-remaining-weight builder))
     (assert (null (bounded-sequence-builder-overflowed-p builder)))))
 
+(define-test test-bounded-sequence-builder-try-append-sequence
+  (let ((characters (make-bounded-sequence-builder
+                     4 :element-type 'character :initial-capacity 1)))
+    (assert (bounded-sequence-builder-try-append-sequence
+             characters "xabcx" :start 1 :end 4))
+    (assert (bounded-sequence-builder-try-append-sequence characters ""))
+    (test-equal "abc" (bounded-sequence-builder-snapshot characters))
+    (assert (null
+             (bounded-sequence-builder-try-append-sequence characters "de")))
+    (assert (bounded-sequence-builder-overflowed-p characters))
+    (test-equal "abc" (bounded-sequence-builder-snapshot characters))
+    (assert (bounded-sequence-builder-try-append-sequence characters "d"))
+    (test-equal "abcd" (bounded-sequence-builder-snapshot characters)))
+  (let ((builder (make-bounded-sequence-builder
+                  4 :maximum-weight 3 :weight-function #'length)))
+    (assert (bounded-sequence-builder-try-append-sequence
+             builder '("outside" "a" "bb" "outside")
+             :start 1 :end 3))
+    (assert (null
+             (bounded-sequence-builder-try-append-sequence builder '("" "c"))))
+    (test-equal #("a" "bb")
+                (bounded-sequence-builder-snapshot builder))
+    (test-equal 3 (bounded-sequence-builder-total-weight builder))))
+
+(define-test test-bounded-sequence-builder-range-snapshots
+  (let* ((source (vector "a" "bb"))
+         (calls 0)
+         (builder
+           (make-bounded-sequence-builder
+            2
+            :maximum-weight 3
+            :weight-function
+            (lambda (element)
+              (when (= (incf calls) 2)
+                (setf (aref source 0) "zzz"))
+              (length element)))))
+    (test-equal 2
+                (bounded-sequence-builder-append-sequence builder source))
+    (test-equal #("a" "bb")
+                (bounded-sequence-builder-snapshot builder))
+    (test-equal 3 (bounded-sequence-builder-total-weight builder)))
+  (let* ((source (vector #\a #\b))
+         (calls 0)
+         (builder
+           (make-bounded-sequence-builder
+            2
+            :element-type 'character
+            :maximum-weight 0
+            :weight-function
+            (lambda (element)
+              (declare (ignore element))
+              (when (= (incf calls) 2)
+                (setf (aref source 0) 42))
+              0))))
+    (assert (bounded-sequence-builder-try-append-sequence builder source))
+    (test-equal "ab" (bounded-sequence-builder-snapshot builder))
+    (test-equal 0 (bounded-sequence-builder-total-weight builder)))
+  (let* ((source (vector "a" "bb" "ccc"))
+         (calls 0)
+         (builder
+           (make-bounded-sequence-builder
+            3
+            :maximum-weight 3
+            :weight-function
+            (lambda (element)
+              (when (= (incf calls) 2)
+                (setf (aref source 0) "zzz"))
+              (length element)))))
+    (multiple-value-bind (count complete-p)
+        (bounded-sequence-builder-append-sequence-truncating builder source)
+      (test-equal 2 count)
+      (assert (null complete-p)))
+    (test-equal #("a" "bb")
+                (bounded-sequence-builder-snapshot builder))
+    (test-equal 3 (bounded-sequence-builder-total-weight builder))))
+
 (define-test test-bounded-sequence-builder-exact-overflow
   (let ((builder (make-bounded-sequence-builder
                   3 :maximum-weight 4 :weight-function #'length)))

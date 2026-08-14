@@ -62,6 +62,7 @@
    #:bounded-sequence-builder-append
    #:bounded-sequence-builder-try-append
    #:bounded-sequence-builder-append-sequence
+   #:bounded-sequence-builder-try-append-sequence
    #:bounded-sequence-builder-append-sequence-truncating
    #:bounded-sequence-builder-snapshot
    #:bounded-sequence-builder-finish

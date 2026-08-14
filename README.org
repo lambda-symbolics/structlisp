@@ -12,8 +12,9 @@ Lisp.
   transfer, maintained element weights, count- or weight-triggered eviction,
   and fresh snapshots.
 - A bounded sequence builder for strings and specialized or general vectors,
-  with exact and truncating range appends, fixed count and optional maintained
-  weight budgets, sticky overflow state, and detached snapshots or finish.
+  with exact signaling, boolean, and truncating range appends, fixed count,
+  optional maintained weight budgets, sticky overflow state, and detached
+  snapshots or finish.
 - A stable binary min-heap with optional unique keys for cancellation and
   reprioritization, non-destructive stable priority-order snapshots, and
   O(n log k) top-K selection.
@@ -52,10 +53,12 @@ Run the tests with:
 The bounded sequence builder accumulates elements into adjustable internal
 storage without exceeding its fixed count limit or optional weight limit. Exact
 appends are atomic and signal =bounded-sequence-builder-overflow= when a range
-cannot fit. Truncating appends accept the longest fitting prefix, return the
+cannot fit. Boolean appends leave contents unchanged, mark overflow, and return
+=nil= instead. Truncating appends accept the longest fitting prefix, return the
 appended count and a true completion value only when the whole range fit, and
 set a sticky overflow state. They never signal the overflow condition, though
 invalid element types or weights still signal their documented errors.
+Range appends snapshot their requested input before invoking weight callbacks.
 =snapshot= returns a detached vector; =finish= returns the same kind of result
 and clears the builder for reuse.
 
