@@ -412,6 +412,44 @@ of the transformed elements in front-to-back order."
                      do (vector-push-extend evicted-element evicted))))
     (values deque (coerce evicted 'simple-vector) elements)))
 
+(defun deque-move-if (predicate source target &key (key #'identity))
+  "Move SOURCE elements satisfying PREDICATE to TARGET in order.
+
+KEY is applied before PREDICATE, while the original element moves. Predicate,
+key, and weight callbacks run against snapshots before either deque changes.
+Return TARGET, a vector of policy-evicted target elements in removal order, and
+a vector of moved source elements. Retained SOURCE elements keep their order.
+Moving a deque to itself is a no-op and does not call callbacks. Any operation
+error leaves both deques unchanged."
+  (check-type predicate (or function symbol))
+  (check-type key (or function symbol))
+  (when (eq source target)
+    (return-from deque-move-if (values target #() #())))
+  (let* ((predicate-function (coerce predicate 'function))
+         (key-function (coerce key 'function))
+         (elements (deque->vector source))
+         (moved (make-array 0 :adjustable t :fill-pointer 0))
+         (retained (make-array 0 :adjustable t :fill-pointer 0)))
+    (loop for element across elements
+          do (vector-push-extend
+              element
+              (if (funcall predicate-function
+                           (funcall key-function element))
+                  moved
+                  retained)))
+    (when (zerop (length moved))
+      (return-from deque-move-if (values target #() #())))
+    (let ((staged-source (deque-copy source))
+          (staged-target (deque-copy target)))
+      (multiple-value-bind (ignored evicted)
+          (deque-append staged-target moved)
+        (declare (ignore ignored))
+        (deque-clear staged-source)
+        (deque-append staged-source retained)
+        (deque--replace-state target staged-target)
+        (deque--replace-state source staged-source)
+        (values target evicted (coerce moved 'simple-vector))))))
+
 (defun deque-move-all (source target &key (key #'identity))
   "Move every transformed SOURCE element to TARGET in front-to-back order.
 
@@ -431,6 +469,19 @@ is a no-op and does not call KEY."
 
 
 ;;;; -- Internal mechanics --
+
+(defun deque--replace-state (target source)
+  "Replace TARGET's complete state with SOURCE's and return TARGET."
+  (setf (deque-storage target) (deque-storage source)
+        (deque-weights target) (deque-weights source)
+        (deque-start target) (deque-start source)
+        (deque-count target) (deque-count source)
+        (deque-total-weight target) (deque-total-weight source)
+        (deque-maximum-count target) (deque-maximum-count source)
+        (deque-maximum-weight target) (deque-maximum-weight source)
+        (deque-weight-function target) (deque-weight-function source)
+        (deque-eviction-end target) (deque-eviction-end source))
+  target)
 
 (defun deque--mapped-vector (sequence key)
   (check-type key (or function symbol))

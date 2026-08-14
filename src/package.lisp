@@ -34,6 +34,7 @@
    #:deque-delete
    #:deque-append
    #:deque-prepend
+   #:deque-move-if
    #:deque-move-all
    #:deque-error
    #:deque-error-deque
