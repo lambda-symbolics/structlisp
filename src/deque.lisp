@@ -394,24 +394,55 @@ a vector containing all policy-evicted elements in removal order."
                      do (vector-push-extend evicted-element evicted))))
     (values deque (coerce evicted 'simple-vector))))
 
-(defun deque-move-all (source target)
-  "Move every element from SOURCE to TARGET in front-to-back order.
+(defun deque-prepend (deque sequence &key (key #'identity))
+  "Prepend SEQUENCE's elements to DEQUE in order after applying KEY.
 
-TARGET applies its own weight function and eviction policy. Return TARGET and,
-as a second value, a vector containing all policy-evicted elements in removal
-order. On success SOURCE is empty with zero maintained weight. Moving a deque
-to itself is a no-op."
+Traversal and KEY application use a snapshot, so DEQUE may also be the source.
+Return DEQUE, a vector of policy-evicted elements in removal order, and a vector
+of the transformed elements in front-to-back order."
+  (let ((elements (deque--mapped-vector sequence key))
+        (evicted (make-array 0 :adjustable t :fill-pointer 0)))
+    (loop for element across elements
+          do (deque--element-weight deque element))
+    (loop for index downfrom (1- (length elements)) to 0
+          do (multiple-value-bind (ignored newly-evicted)
+                 (deque-push-front deque (aref elements index))
+               (declare (ignore ignored))
+               (loop for evicted-element across newly-evicted
+                     do (vector-push-extend evicted-element evicted))))
+    (values deque (coerce evicted 'simple-vector) elements)))
+
+(defun deque-move-all (source target &key (key #'identity))
+  "Move every transformed SOURCE element to TARGET in front-to-back order.
+
+KEY is applied to a snapshot before either deque changes. TARGET applies its own
+weight function and eviction policy. Return TARGET, a vector containing all
+policy-evicted elements in removal order, and a vector of transformed elements.
+On success SOURCE is empty with zero maintained weight. Moving a deque to itself
+is a no-op and does not call KEY."
   (when (eq source target)
-    (return-from deque-move-all (values target #())))
-  (let ((elements (deque->vector source)))
+    (return-from deque-move-all (values target #() #())))
+  (let ((elements (deque--mapped-vector source key)))
     (loop for element across elements
           do (deque--element-weight target element))
     (multiple-value-bind (result evicted) (deque-append target elements)
       (deque-clear source)
-      (values result evicted))))
+      (values result evicted elements))))
 
 
 ;;;; -- Internal mechanics --
+
+(defun deque--mapped-vector (sequence key)
+  (check-type key (or function symbol))
+  (let* ((elements (if (deque-p sequence)
+                       (deque->vector sequence)
+                       (coerce sequence 'vector)))
+         (result (make-array (length elements)))
+         (function (coerce key 'function)))
+    (loop for index below (length elements)
+          do (setf (aref result index)
+                   (funcall function (aref elements index))))
+    result))
 
 (defun deque--physical-index (deque logical-index)
   (mod (+ (deque-start deque) logical-index) (deque-capacity deque)))

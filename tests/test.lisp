@@ -218,6 +218,43 @@
     (deque-append target target)
     (test-equal '(a b c nil a b c nil) (deque->list target))))
 
+(define-test test-deque-prepend
+  (let ((target (make-deque :initial-contents '("old" "tail")
+                            :maximum-count 4
+                            :eviction-end :back)))
+    (multiple-value-bind (result evicted transformed)
+        (deque-prepend target '(a bb ccc) :key #'string-downcase)
+      (assert (eq target result))
+      (test-equal #("tail") evicted)
+      (test-equal #("a" "bb" "ccc") transformed))
+    (test-equal '("a" "bb" "ccc" "old") (deque->list target)))
+  (let ((deque (make-deque :initial-contents '(a b))))
+    (deque-prepend deque deque)
+    (test-equal '(a b a b) (deque->list deque))))
+
+(define-test test-deque-move-all-mapping
+  (let ((source (make-deque :initial-contents '(1 2 nil)))
+        (target (make-deque :initial-contents '(old))))
+    (multiple-value-bind (result evicted transformed)
+        (deque-move-all source target :key (lambda (value) (list 'item value)))
+      (assert (eq target result))
+      (test-equal #() evicted)
+      (test-equal #((item 1) (item 2) (item nil)) transformed))
+    (assert (deque-empty-p source))
+    (test-equal '(old (item 1) (item 2) (item nil))
+                (deque->list target)))
+  (let ((calls 0)
+        (deque (make-deque :initial-contents '(a b))))
+    (multiple-value-bind (result evicted transformed)
+        (deque-move-all deque deque :key (lambda (element)
+                                           (incf calls)
+                                           element))
+      (assert (eq deque result))
+      (test-equal #() evicted)
+      (test-equal #() transformed))
+    (test-equal 0 calls)
+    (test-equal '(a b) (deque->list deque))))
+
 (define-test test-deque-move-all
   (let ((source (make-deque :initial-capacity 4
                             :initial-contents '("a" "bb" "ccc")

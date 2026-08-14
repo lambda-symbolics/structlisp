@@ -33,6 +33,7 @@
    #:deque-find
    #:deque-delete
    #:deque-append
+   #:deque-prepend
    #:deque-move-all
    #:deque-error
    #:deque-error-deque

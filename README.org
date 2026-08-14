@@ -7,9 +7,9 @@ Lisp.
 * Contents
 
 - A circular-array deque with O(1) amortized end operations, O(1) indexed
-  access, indexed insertion, removal, search, ordered append and transfer,
-  maintained element weights, count- or weight-triggered eviction, and fresh
-  list or vector snapshots.
+  access, indexed insertion and removal, bounded predicate search, independent
+  copying, ordered append and prepend, mapped destructive transfer, maintained
+  element weights, count- or weight-triggered eviction, and fresh snapshots.
 - A bounded sequence builder for strings and specialized or general vectors,
   with exact and truncating range appends, fixed count and optional maintained
   weight budgets, sticky overflow state, and detached snapshots or finish.
