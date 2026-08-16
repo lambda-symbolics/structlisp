@@ -1,48 +1,45 @@
 #+TITLE: Structlisp
 
 Structlisp is a portable Common Lisp library of general-purpose data structures
-for interactive systems. It has no runtime dependencies beyond ANSI Common
-Lisp.
+for interactive systems. It depends only on ANSI Common Lisp.
 
 * Contents
 
-- A circular-array deque with O(1) amortized end operations, O(1) indexed
-  access, indexed insertion and removal, bounded predicate search, independent
+- Circular-array deque: O(1) amortized end operations, O(1) indexed access,
+  indexed insertion and removal, bounded predicate search, independent
   copying, ordered append and prepend, selective or mapped destructive
   transfer, maintained element weights, count- or weight-triggered eviction,
-  and fresh snapshots.
-- A bounded sequence builder for strings and specialized or general vectors,
-  with exact signaling, boolean, and truncating range appends, fixed count,
-  optional maintained weight budgets, sticky overflow state, and detached
-  snapshots or finish.
-- A stable binary min-heap with optional unique keys for cancellation and
+  and fresh snapshots
+- Bounded sequence builder for strings and specialized or general vectors:
+  exact signaling, boolean, and truncating range appends, fixed count,
+  optional weight budgets, sticky overflow state, and detached snapshots or
+  finish
+- Stable binary min-heap with optional unique keys for cancellation and
   reprioritization, non-destructive stable priority-order snapshots, and
-  O(n log k) top-K selection.
-- A sorted string index with cached normalized keys and binary-searched exact
-  and prefix ranges.
-- An insertion-ordered hash map with O(1) expected lookup and deletion.
-- A keyed FIFO cache with non-promoting O(1) expected lookup, stable update
-  positions, count and weight budgets, oldest-first eviction, predicate deletion,
-  and detached insertion-order snapshots.
-- A least-recently-used cache with maintained count and weight budgets, plus a
-  producer-backed memo cache.
-- Canonical half-open integer interval sets and maps with binary-search queries
-  and linear set algebra or rewrites.
-- A compact monotone unsigned-integer index with lower-bound, upper-bound, and
-  neighboring-value queries.
+  O(n log k) top-K selection
+- Sorted string index with cached normalized keys and binary-searched exact
+  and prefix ranges
+- Insertion-ordered hash map with O(1) expected lookup and deletion
+- Keyed FIFO cache with non-promoting O(1) expected lookup, stable update
+  positions, count and weight budgets, oldest-first eviction, predicate
+  deletion, and detached insertion-order snapshots
+- Least-recently-used cache with maintained count and weight budgets, plus a
+  producer-backed memo cache
+- Canonical half-open integer interval sets and maps with binary-search
+  queries and linear set algebra or rewrites
+- Compact monotone unsigned-integer index with lower-bound, upper-bound, and
+  neighboring-value queries
 
 All structures use opaque representations and live in the =structlisp=
-package. Public traversal functions use snapshots, so callbacks may safely
-mutate the traversed container. APIs that can store =nil= return an explicit
-presence value where needed.
+package. Public traversal functions use snapshots, so callbacks may mutate the
+traversed container. APIs that can store =nil= return an explicit presence
+value where needed.
 
 * Loading
 
 #+begin_src lisp
 (asdf:load-system "structlisp")
 #+end_src
-
-Run the tests with:
 
 #+begin_src lisp
 (asdf:test-system "structlisp")
@@ -51,22 +48,22 @@ Run the tests with:
 * Bounded sequence builder
 
 The bounded sequence builder accumulates elements into adjustable internal
-storage without exceeding its fixed count limit or optional weight limit. Exact
-appends are atomic and signal =bounded-sequence-builder-overflow= when a range
-cannot fit. Boolean appends leave contents unchanged, mark overflow, and return
-=nil= instead. Truncating appends accept the longest fitting prefix, return the
-appended count and a true completion value only when the whole range fit, and
-set a sticky overflow state. They never signal the overflow condition, though
-invalid element types or weights still signal their documented errors.
-Range appends snapshot their requested input before invoking weight callbacks.
-=snapshot= returns a detached vector; =finish= returns the same kind of result
-and clears the builder for reuse.
+storage up to its fixed count limit and optional weight limit.
+
+- Exact appends are atomic and signal =bounded-sequence-builder-overflow=
+  when a range cannot fit
+- Boolean appends leave contents as they are, mark overflow, and return =nil=
+- Truncating appends accept the longest fitting prefix, return the appended
+  count and a true completion value when the whole range fit, and set a
+  sticky overflow state
+
+Range appends snapshot their requested input before invoking weight
+callbacks. =snapshot= returns a detached vector; =finish= returns the same
+kind of result and clears the builder for reuse.
 
 A character builder finishes as a string. An octet builder finishes as a
 specialized vector when the implementation supports that specialization. A
-weight function can maintain byte, cost, or other client-defined budgets without
-parallel counters.
-Weight callbacks may inspect but not mutate their builder.
+weight function can maintain byte, cost, or other client-defined budgets.
 
 #+begin_src lisp
 (let ((builder (structlisp:make-bounded-sequence-builder
@@ -85,11 +82,10 @@ Weight callbacks may inspect but not mutate their builder.
 
 A FIFO cache preserves insertion order independently of reads. Updating an
 existing key keeps its position unless =fifo-cache-move-to-back= is called.
-Count and weight budgets evict oldest entries and return them in eviction order.
-The optional eviction callback observes the same order. Weight, eviction, and
-predicate callbacks may inspect but not mutate the cache. All eviction callbacks
-are attempted. If any fail, =fifo-cache-eviction-callback-error= reports the
-complete evicted-entry vector and ordered failure records.
+Count and weight budgets evict oldest entries and return them in eviction
+order. The optional eviction callback observes the same order. All eviction
+callbacks are attempted. If any fail, =fifo-cache-eviction-callback-error=
+reports the complete evicted-entry vector and ordered failure records.
 
 #+begin_src lisp
 (let ((cache (structlisp:make-fifo-cache
