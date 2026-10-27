@@ -354,6 +354,9 @@ values."
 ;;;; -- Internal mechanics --
 
 (defun fifo-cache--ensure-mutable (cache operation)
+  "Return CACHE, or signal FIFO-CACHE-CALLBACK-MUTATION-ERROR when a callback is running.
+
+OPERATION names the attempted mutation for the report."
   (when (fifo-cache--slot-active-callback cache)
     (error 'fifo-cache-callback-mutation-error
            :cache cache
@@ -362,6 +365,9 @@ values."
   cache)
 
 (defun fifo-cache--call-client (cache callback function &rest arguments)
+  "Apply FUNCTION to ARGUMENTS with CALLBACK recorded as CACHE's active callback.
+
+Restore the previous active callback on every exit."
   (let ((previous-callback (fifo-cache--slot-active-callback cache)))
     (unwind-protect
          (progn
@@ -370,6 +376,9 @@ values."
       (setf (fifo-cache--slot-active-callback cache) previous-callback))))
 
 (defun fifo-cache--entry-weight (cache key value)
+  "Return the weight of KEY and VALUE under CACHE's weight function, or 0 without one.
+
+Signal FIFO-CACHE-WEIGHT-ERROR unless the weight is a non-negative integer."
   (let ((weight
           (if (fifo-cache--slot-weight-function cache)
               (fifo-cache--call-client
@@ -388,6 +397,7 @@ values."
     weight))
 
 (defun fifo-cache--over-limit-p (cache)
+  "Return T when CACHE holds more entries or weight than its limits allow."
   (or (and (fifo-cache--slot-maximum-count cache)
            (> (fifo-cache-count cache)
               (fifo-cache--slot-maximum-count cache)))
@@ -396,6 +406,11 @@ values."
               (fifo-cache--slot-maximum-weight cache)))))
 
 (defun fifo-cache--evict-to-limits (cache)
+  "Remove CACHE's oldest entries until it fits its limits, then call its eviction function.
+
+Return a simple vector of the evicted key and value conses in eviction order.
+Call the eviction function once for each, and when any call fails, signal
+FIFO-CACHE-EVICTION-CALLBACK-ERROR with every evicted entry and failure."
   (let ((evicted (make-array 0 :adjustable t :fill-pointer 0)))
     (loop while (fifo-cache--over-limit-p cache)
           do (multiple-value-bind (key entry present-p)
