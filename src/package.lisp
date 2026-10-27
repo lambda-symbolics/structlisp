@@ -1,4 +1,5 @@
 (defpackage #:structlisp
+  (:documentation "General-purpose data structures for interactive Common Lisp systems.")
   (:use #:cl)
   (:export
    ;; Deque
