@@ -52,6 +52,10 @@
    #:deque-weight-limit-error-index
    #:deque-weight-limit-error-total-weight
    #:deque-weight-limit-error-maximum-weight
+   #:deque-range-error
+   #:deque-range-error-start
+   #:deque-range-error-end
+   #:deque-range-error-count
    ;; Bounded sequence builder
    #:bounded-sequence-builder
    #:make-bounded-sequence-builder

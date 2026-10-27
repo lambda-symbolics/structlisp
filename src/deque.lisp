@@ -75,6 +75,27 @@
              (deque-weight-limit-error-maximum-weight condition))))
   (:documentation "A replacement would raise a deque's total weight above its limit."))
 
+(define-condition deque-range-error (deque-error)
+  ((start
+    :initarg       :start
+    :reader        deque-range-error-start
+    :documentation "The inclusive start of the requested range.")
+   (end
+    :initarg       :end
+    :reader        deque-range-error-end
+    :documentation "The exclusive end of the requested range.")
+   (count
+    :initarg       :count
+    :reader        deque-range-error-count
+    :documentation "The deque's element count."))
+  (:report
+   (lambda (condition stream)
+     (format stream "Deque range [~D, ~D) is outside the deque's ~D element~:P."
+             (deque-range-error-start condition)
+             (deque-range-error-end condition)
+             (deque-range-error-count condition))))
+  (:documentation "An operation received a range that is reversed or extends past the deque's end."))
+
 
 ;;;; -- Deque --
 
@@ -344,8 +365,11 @@ before PREDICATE. Return NIL and NIL when no element matches."
   (check-type end (or null (integer 0 *)))
   (let ((end (or end (deque-count deque))))
     (unless (<= start end (deque-count deque))
-      (error "Deque search range [~D, ~D) exceeds count ~D."
-             start end (deque-count deque)))
+      (error 'deque-range-error
+             :deque deque
+             :start start
+             :end   end
+             :count (deque-count deque)))
     (let ((predicate-function (coerce predicate 'function))
           (key-function (coerce key 'function)))
       (if from-end

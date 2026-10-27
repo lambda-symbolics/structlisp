@@ -183,8 +183,11 @@
     (handler-case
         (progn
           (deque-position-if #'identity source :start 3 :end 2)
-          (error "Expected invalid deque search range to fail."))
-      (error ()))))
+          (error "Expected DEQUE-RANGE-ERROR."))
+      (deque-range-error (condition)
+        (test-equal '(3 2 4) (list (deque-range-error-start condition)
+                                   (deque-range-error-end condition)
+                                   (deque-range-error-count condition)))))))
 
 (define-test test-deque-delete
   (let ((deque (make-deque :initial-capacity 4
