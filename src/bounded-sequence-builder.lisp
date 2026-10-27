@@ -82,6 +82,27 @@
              (type-error-expected-type condition))))
   (:documentation "An append received an element outside the builder's element type."))
 
+(define-condition bounded-sequence-builder-range-error (type-error)
+  ((start
+    :initarg       :start
+    :reader        bounded-sequence-builder-range-error-start
+    :documentation "The inclusive start of the requested range.")
+   (end
+    :initarg       :end
+    :reader        bounded-sequence-builder-range-error-end
+    :documentation "The exclusive end of the requested range.")
+   (length
+    :initarg       :length
+    :reader        bounded-sequence-builder-range-error-length
+    :documentation "The length of the source sequence."))
+  (:report
+   (lambda (condition stream)
+     (format stream "Range [~D, ~D) is outside a sequence of length ~D."
+             (bounded-sequence-builder-range-error-start condition)
+             (bounded-sequence-builder-range-error-end condition)
+             (bounded-sequence-builder-range-error-length condition))))
+  (:documentation "A range append received a reversed range or one past the sequence end."))
+
 
 ;;;; -- Builder --
 
@@ -318,7 +339,10 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
   (let* ((length (length sequence))
          (end (or end length)))
     (unless (<= start end length)
-      (error 'type-error
+      (error 'bounded-sequence-builder-range-error
+             :start         start
+             :end           end
+             :length        length
              :datum         (list start end)
              :expected-type `(cons (integer 0 ,length)
                                    (cons (integer ,start ,length) null))))

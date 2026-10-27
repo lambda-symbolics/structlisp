@@ -436,6 +436,10 @@
           (progn
             (bounded-sequence-builder-append-sequence
              builder #(a b c) :start (first range) :end (second range))
-            (error "Expected TYPE-ERROR."))
-        (type-error ())))
+            (error "Expected BOUNDED-SEQUENCE-BUILDER-RANGE-ERROR."))
+        (bounded-sequence-builder-range-error (condition)
+          (test-equal (list (first range) (second range) 3)
+                      (list (bounded-sequence-builder-range-error-start condition)
+                            (bounded-sequence-builder-range-error-end condition)
+                            (bounded-sequence-builder-range-error-length condition))))))
     (test-equal #() (bounded-sequence-builder-snapshot builder))))
