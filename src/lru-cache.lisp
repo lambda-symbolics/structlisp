@@ -247,6 +247,9 @@ and NIL when the value was newly computed. NIL values are cached normally."
 ;;;; -- Internal mechanics --
 
 (defun lru-cache--entry-weight (cache key value)
+  "Return the weight of KEY and VALUE under CACHE's weight function, or 0 without one.
+
+Signal LRU-CACHE-WEIGHT-ERROR unless the weight is a non-negative integer."
   (let ((weight (if (lru-cache-weight-function cache)
                     (funcall (lru-cache-weight-function cache) key value)
                     0)))
@@ -259,6 +262,7 @@ and NIL when the value was newly computed. NIL values are cached normally."
     weight))
 
 (defun lru-cache--unlink-node (cache node)
+  "Detach NODE from CACHE's recency list and return NODE."
   (let ((previous (lru-cache-node-previous node))
         (next (lru-cache-node-next node)))
     (if previous
@@ -272,6 +276,7 @@ and NIL when the value was newly computed. NIL values are cached normally."
     node))
 
 (defun lru-cache--move-to-back (cache node)
+  "Make NODE CACHE's most recently used node and return NODE."
   (unless (eq node (lru-cache-last-node cache))
     (lru-cache--unlink-node cache node)
     (setf (lru-cache-node-previous node) (lru-cache-last-node cache)
@@ -283,6 +288,10 @@ and NIL when the value was newly computed. NIL values are cached normally."
   node)
 
 (defun lru-cache--remove-node (cache node budget-eviction-p)
+  "Remove NODE from CACHE and its total weight, and return NODE.
+
+When BUDGET-EVICTION-P is true, call CACHE's eviction function with the
+node's key and value."
   (lru-cache--unlink-node cache node)
   (remhash (lru-cache-node-key node) (lru-cache-table cache))
   (decf (lru-cache-total-weight cache) (lru-cache-node-weight node))
@@ -293,12 +302,16 @@ and NIL when the value was newly computed. NIL values are cached normally."
   node)
 
 (defun lru-cache--over-limit-p (cache)
+  "Return T when CACHE holds more entries or weight than its limits allow."
   (or (and (lru-cache-maximum-count cache)
            (> (lru-cache-count cache) (lru-cache-maximum-count cache)))
       (and (lru-cache-maximum-weight cache)
            (> (lru-cache-total-weight cache) (lru-cache-maximum-weight cache)))))
 
 (defun lru-cache--evict-to-limits (cache)
+  "Remove CACHE's least recently used entries until it fits its limits.
+
+Return a simple vector of the evicted key and value conses in eviction order."
   (let ((evicted (make-array 0 :adjustable t :fill-pointer 0)))
     (loop while (lru-cache--over-limit-p cache)
           for node = (lru-cache-first-node cache)
