@@ -163,6 +163,9 @@ has changed since insertion. Return NIL and NIL when no item matches."
 ;;;; -- Internal mechanics --
 
 (defun sorted-string-index--item-key (index item)
+  "Return a fresh copy of ITEM's normalized key in INDEX.
+
+Signal SORTED-STRING-INDEX-KEY-ERROR unless the key is a string."
   (let ((key (funcall (sorted-string-index-normalizer index)
                       (funcall (sorted-string-index-key-function index) item))))
     (unless (stringp key)
@@ -173,6 +176,9 @@ has changed since insertion. Return NIL and NIL when no item matches."
     (copy-seq key)))
 
 (defun sorted-string-index--query-key (index query)
+  "Return QUERY normalized by INDEX's normalizer.
+
+Signal SORTED-STRING-INDEX-KEY-ERROR unless the result is a string."
   (let ((key (funcall (sorted-string-index-normalizer index) query)))
     (unless (stringp key)
       (error 'sorted-string-index-key-error
@@ -182,9 +188,11 @@ has changed since insertion. Return NIL and NIL when no item matches."
     key))
 
 (defun sorted-string-index--key-at (index position)
+  "Return INDEX's cached key at POSITION."
   (aref (sorted-string-index-keys index) position))
 
 (defun sorted-string-index--lower-bound-key (index query-key)
+  "Return the position of the first key in INDEX not less than QUERY-KEY."
   (let ((low 0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
@@ -196,6 +204,7 @@ has changed since insertion. Return NIL and NIL when no item matches."
     low))
 
 (defun sorted-string-index--upper-bound-key (index query-key)
+  "Return the position of the first key in INDEX greater than QUERY-KEY."
   (let ((low 0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
@@ -207,6 +216,10 @@ has changed since insertion. Return NIL and NIL when no item matches."
     low))
 
 (defun sorted-string-index--prefix-compare (key prefix)
+  "Compare KEY with PREFIX, returning 0 when KEY starts with PREFIX.
+
+Return -1 when KEY sorts before every key that starts with PREFIX, and 1 when
+it sorts after them."
   (let* ((key-length (length key))
          (prefix-length (length prefix))
          (shared-length (min key-length prefix-length)))
@@ -222,6 +235,10 @@ has changed since insertion. Return NIL and NIL when no item matches."
       (t 0))))
 
 (defun sorted-string-index--prefix-bound (index prefix upper-p)
+  "Return the bound of the keys in INDEX that start with PREFIX.
+
+Return the position of the first such key, or with UPPER-P true, the position
+after the last one."
   (let ((low 0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
@@ -236,6 +253,7 @@ has changed since insertion. Return NIL and NIL when no item matches."
     low))
 
 (defun sorted-string-index--vector-insert (vector position item)
+  "Return a fresh vector of VECTOR's elements with ITEM inserted at POSITION."
   (let* ((count (length vector))
          (result (make-array (1+ count))))
     (replace result vector :end1 position :end2 position)
@@ -244,6 +262,7 @@ has changed since insertion. Return NIL and NIL when no item matches."
     result))
 
 (defun sorted-string-index--vector-remove (vector position)
+  "Return a fresh vector of VECTOR's elements without the one at POSITION."
   (let* ((count (length vector))
          (result (make-array (1- count))))
     (replace result vector :end1 position :end2 position)
