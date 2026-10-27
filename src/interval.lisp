@@ -423,12 +423,17 @@ The existing canonical vector is rewritten in O(n) time."
 ;;;; -- Internal mechanics --
 
 (defun integer-interval--validate (start end)
+  "Signal an error unless START and END are integers with START no greater than END.
+
+A type error covers a non-integer bound and INTEGER-INTERVAL-ERROR a reversed
+pair."
   (check-type start integer)
   (check-type end integer)
   (when (> start end)
     (error 'integer-interval-error :start start :end end)))
 
 (defun integer-interval--bounds (interval)
+  "Return the start and end of INTERVAL, an integer interval or a (START . END) cons."
   (etypecase interval
     (integer-interval
      (values (integer-interval-start interval)
@@ -437,6 +442,9 @@ The existing canonical vector is rewritten in O(n) time."
      (values (first interval) (rest interval)))))
 
 (defun integer-interval-set--append-canonical (intervals interval)
+  "Append INTERVAL to INTERVALS, merging it into the last interval when they touch or overlap.
+
+INTERVAL must not start before the last interval. Return INTERVALS."
   (if (zerop (length intervals))
       (vector-push-extend interval intervals)
       (let ((previous (aref intervals (1- (length intervals)))))
@@ -451,6 +459,7 @@ The existing canonical vector is rewritten in O(n) time."
   intervals)
 
 (defun integer-interval-set--candidate-position (set point)
+  "Return the position of the last interval in SET starting at or before POINT, or NIL."
   (let ((low 0)
         (high (integer-interval-set-count set)))
     (loop while (< low high)
@@ -465,6 +474,7 @@ The existing canonical vector is rewritten in O(n) time."
       (1- low))))
 
 (defun integer-interval-set--first-ending-after (set point)
+  "Return the position of the first interval in SET ending after POINT, or SET's count."
   (let ((low 0)
         (high (integer-interval-set-count set)))
     (loop while (< low high)
@@ -478,6 +488,7 @@ The existing canonical vector is rewritten in O(n) time."
     low))
 
 (defun integer-interval-map--candidate-position (map point)
+  "Return the position of the last entry in MAP starting at or before POINT, or NIL."
   (let ((low 0)
         (high (integer-interval-map-count map)))
     (loop while (< low high)
@@ -492,6 +503,7 @@ The existing canonical vector is rewritten in O(n) time."
       (1- low))))
 
 (defun integer-interval-map--first-ending-after (map point)
+  "Return the position of the first entry in MAP ending after POINT, or MAP's count."
   (let ((low 0)
         (high (integer-interval-map-count map)))
     (loop while (< low high)
@@ -505,6 +517,10 @@ The existing canonical vector is rewritten in O(n) time."
     low))
 
 (defun integer-interval-map--append-canonical (map entries entry)
+  "Append ENTRY to ENTRIES, merging it into the last entry when they touch and hold equal values.
+
+MAP's value test compares the values. ENTRY must not start before the last
+entry ends. Return ENTRIES."
   (if (zerop (length entries))
       (vector-push-extend entry entries)
       (let ((previous (aref entries (1- (length entries)))))
