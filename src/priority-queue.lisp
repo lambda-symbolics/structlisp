@@ -206,9 +206,14 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
 ;;;; -- Priority queue internals --
 
 (defun priority-queue--parent-index (index)
+  "Return the heap index of the parent of the entry at INDEX."
   (floor (1- index) 2))
 
 (defun priority-queue--entry-before-p (queue left right)
+  "Return true when entry LEFT leaves QUEUE before entry RIGHT.
+
+A better priority under QUEUE's LESSP comes first, and equal priorities leave in
+insertion order."
   (let* ((lessp (priority-queue-lessp queue))
          (left-priority (priority-queue-entry-priority left))
          (right-priority (priority-queue-entry-priority right)))
@@ -218,6 +223,7 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
                 (priority-queue-entry-sequence right))))))
 
 (defun priority-queue--swap (queue left-index right-index)
+  "Swap QUEUE's entries at LEFT-INDEX and RIGHT-INDEX and update their recorded indices."
   (let* ((storage (priority-queue-storage queue))
          (left (aref storage left-index))
          (right (aref storage right-index)))
@@ -226,6 +232,9 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
           (priority-queue-entry-index right) left-index)))
 
 (defun priority-queue--sift-up (queue index)
+  "Move QUEUE's entry at INDEX toward the root until its parent comes before it.
+
+Return the entry's final index."
   (loop while (> index 0)
         for parent = (priority-queue--parent-index index)
         while (priority-queue--entry-before-p
@@ -237,6 +246,9 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
   index)
 
 (defun priority-queue--sift-down (queue index)
+  "Move QUEUE's entry at INDEX toward the leaves until it comes before both children.
+
+Return the entry's final index."
   (let ((storage (priority-queue-storage queue)))
     (loop
       (let* ((count (length storage))
@@ -257,6 +269,9 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
         (setf index best)))))
 
 (defun priority-queue--remove-at (queue index)
+  "Remove QUEUE's entry at heap INDEX and restore the heap order.
+
+Return the removed item, priority, key, and true."
   (let* ((storage (priority-queue-storage queue))
          (last-index (1- (length storage)))
          (removed (aref storage index)))
@@ -284,6 +299,10 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
 ;;;; -- Top-K internals --
 
 (defun top-k--better-p (left right lessp)
+  "Return true when top-K candidate LEFT ranks before candidate RIGHT.
+
+Each candidate is a vector of item, priority, and input position. A better
+priority under LESSP ranks first, and equal priorities rank in input order."
   (let ((left-priority (aref left 1))
         (right-priority (aref right 1)))
     (or (funcall lessp left-priority right-priority)
@@ -291,12 +310,17 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
              (< (aref left 2) (aref right 2))))))
 
 (defun top-k--worse-p (left right lessp)
+  "Return true when top-K candidate LEFT ranks after candidate RIGHT under LESSP."
   (top-k--better-p right left lessp))
 
 (defun top-k--swap (heap left-index right-index)
+  "Swap the candidates at LEFT-INDEX and RIGHT-INDEX of HEAP."
   (rotatef (aref heap left-index) (aref heap right-index)))
 
 (defun top-k--sift-up-worst (heap index lessp)
+  "Move HEAP's candidate at INDEX toward the root while it ranks after its parent.
+
+The root of HEAP holds the worst kept candidate."
   (loop while (> index 0)
         for parent = (floor (1- index) 2)
         while (top-k--worse-p (aref heap index) (aref heap parent) lessp)
@@ -304,6 +328,9 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
            (setf index parent)))
 
 (defun top-k--sift-down-worst (heap index lessp)
+  "Move HEAP's candidate at INDEX toward the leaves while a child ranks after it.
+
+The root of HEAP holds the worst kept candidate."
   (loop
     (let* ((count (length heap))
            (left (+ (* 2 index) 1))
