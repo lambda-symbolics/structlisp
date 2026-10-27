@@ -2,6 +2,9 @@
   (:documentation "General-purpose data structures for interactive Common Lisp systems.")
   (:use #:cl)
   (:export
+   ;; Shared conditions
+   #:missing-weight-function-error
+   #:missing-weight-function-error-maximum-weight
    ;; Deque
    #:deque
    #:make-deque

@@ -1234,6 +1234,18 @@
           (error "Expected MONOTONE-INTEGER-INDEX-VALUE-ERROR."))
       (monotone-integer-index-value-error ()))))
 
+(define-test test-weight-limit-requires-weight-function
+  (dolist (constructor (list (lambda () (make-deque :maximum-weight 5))
+                             (lambda () (make-bounded-sequence-builder 3 :maximum-weight 5))
+                             (lambda () (make-fifo-cache :maximum-weight 5))
+                             (lambda () (make-lru-cache :maximum-weight 5))))
+    (handler-case
+        (progn
+          (funcall constructor)
+          (error "Expected MISSING-WEIGHT-FUNCTION-ERROR."))
+      (missing-weight-function-error (condition)
+        (test-equal 5 (missing-weight-function-error-maximum-weight condition))))))
+
 (defun run-tests ()
   "Run the complete Structlisp test suite and return true on success."
   (let ((failures nil))

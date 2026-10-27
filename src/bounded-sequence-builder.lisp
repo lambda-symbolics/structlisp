@@ -103,7 +103,7 @@ for each element when MAXIMUM-WEIGHT is supplied."
   (check-type weight-function (or null function symbol))
   (when (and (not (null maximum-weight))
              (null weight-function))
-    (error "MAXIMUM-WEIGHT requires WEIGHT-FUNCTION."))
+    (error 'missing-weight-function-error :maximum-weight maximum-weight))
   (let ((capacity (min initial-capacity maximum-count)))
     (%make-bounded-sequence-builder
      :storage         (make-array capacity

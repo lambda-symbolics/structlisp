@@ -87,7 +87,7 @@ hold. Initial contents are inserted from left to right under the same policy."
   (check-type weight-function (or null function symbol))
   (check-type eviction-end (member :front :back))
   (when (and maximum-weight (null weight-function))
-    (error "MAXIMUM-WEIGHT requires WEIGHT-FUNCTION."))
+    (error 'missing-weight-function-error :maximum-weight maximum-weight))
   (let* ((contents (coerce initial-contents 'vector))
          (capacity (max 1 initial-capacity (length contents)))
          (deque (%make-deque

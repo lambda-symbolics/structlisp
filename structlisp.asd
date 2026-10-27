@@ -8,6 +8,7 @@
   :pathname "src"
   :serial t
   :components ((:file "package")
+               (:file "conditions")
                (:file "deque")
                (:file "bounded-sequence-builder")
                (:file "priority-queue")

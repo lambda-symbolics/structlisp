@@ -114,7 +114,7 @@ positive-weight entries or, for a zero count limit, no entries at all."
   (check-type weight-function (or null function symbol))
   (check-type eviction-function (or null function symbol))
   (when (and maximum-weight (null weight-function))
-    (error "MAXIMUM-WEIGHT requires WEIGHT-FUNCTION."))
+    (error 'missing-weight-function-error :maximum-weight maximum-weight))
   (let ((cache (fifo-cache--make
                 :entries           (make-ordered-map :test test)
                 :maximum-count     maximum-count

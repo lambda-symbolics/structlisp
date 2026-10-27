@@ -70,7 +70,7 @@ budget-triggered eviction. Zero limits are valid and retain no entries."
   (check-type weight-function (or null function symbol))
   (check-type eviction-function (or null function symbol))
   (when (and maximum-weight (null weight-function))
-    (error "MAXIMUM-WEIGHT requires WEIGHT-FUNCTION."))
+    (error 'missing-weight-function-error :maximum-weight maximum-weight))
   (lru-cache--make
    :table             (make-hash-table :test test)
    :maximum-count     maximum-count
