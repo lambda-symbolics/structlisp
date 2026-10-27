@@ -558,6 +558,7 @@ is a no-op and does not call KEY."
   target)
 
 (defun deque--mapped-vector (sequence key)
+  "Return a fresh vector of KEY applied to each element of SEQUENCE, a deque or a sequence."
   (check-type key (or function symbol))
   (let* ((elements (if (deque-p sequence)
                        (deque->vector sequence)
@@ -570,9 +571,11 @@ is a no-op and does not call KEY."
     result))
 
 (defun deque--physical-index (deque logical-index)
+  "Return the storage index that holds DEQUE's element at LOGICAL-INDEX."
   (mod (+ (deque-start deque) logical-index) (deque-capacity deque)))
 
 (defun deque--check-index (deque index allow-end-p)
+  "Signal DEQUE-INDEX-ERROR unless INDEX names an element of DEQUE, or its end when ALLOW-END-P is true."
   (check-type index integer)
   (let ((maximum (if allow-end-p
                      (deque-count deque)
@@ -586,6 +589,10 @@ is a no-op and does not call KEY."
 
 
 (defun deque--position (item deque &key key test test-supplied-p test-not test-not-supplied-p)
+  "Return the index of the first DEQUE element matching ITEM and true, or NIL and NIL.
+
+KEY, TEST, and TEST-NOT follow DEQUE-POSITION. TEST-SUPPLIED-P and
+TEST-NOT-SUPPLIED-P say which of TEST and TEST-NOT the caller passed."
   (when (and test-supplied-p test-not-supplied-p)
     (error 'deque-test-conflict-error
            :deque    deque
@@ -608,6 +615,9 @@ is a no-op and does not call KEY."
           finally (return (values nil nil)))))
 
 (defun deque--element-weight (deque element)
+  "Return ELEMENT's weight under DEQUE's weight function, or 0 without one.
+
+Signal DEQUE-WEIGHT-ERROR unless the weight is a non-negative integer."
   (let ((weight (if (deque-weight-function deque)
                     (funcall (deque-weight-function deque) element)
                     0)))
@@ -619,21 +629,25 @@ is a no-op and does not call KEY."
     weight))
 
 (defun deque--physical-weight (deque physical-index)
+  "Return the cached weight at storage index PHYSICAL-INDEX, or 0 when DEQUE keeps no weights."
   (if (deque-weights deque)
       (aref (deque-weights deque) physical-index)
       0))
 
 (defun deque--store-at-physical-index (deque physical-index element &key (weight 0))
+  "Store ELEMENT and its WEIGHT at storage index PHYSICAL-INDEX of DEQUE."
   (setf (aref (deque-storage deque) physical-index) element)
   (when (deque-weights deque)
     (setf (aref (deque-weights deque) physical-index) weight)))
 
 (defun deque--clear-physical-slot (deque physical-index)
+  "Clear the element and weight at storage index PHYSICAL-INDEX of DEQUE."
   (setf (aref (deque-storage deque) physical-index) nil)
   (when (deque-weights deque)
     (setf (aref (deque-weights deque) physical-index) nil)))
 
 (defun deque--copy-logical-slot (deque source-index target-index)
+  "Copy DEQUE's element and weight at SOURCE-INDEX to TARGET-INDEX."
   (let ((source-physical (deque--physical-index deque source-index))
         (target-physical (deque--physical-index deque target-index)))
     (setf (aref (deque-storage deque) target-physical)
@@ -643,6 +657,10 @@ is a no-op and does not call KEY."
             (aref (deque-weights deque) source-physical)))))
 
 (defun deque--ensure-capacity (deque required-capacity)
+  "Grow DEQUE's storage to hold at least REQUIRED-CAPACITY elements.
+
+Growth at least doubles the capacity and moves the first element to storage
+index 0."
   (when (> required-capacity (deque-capacity deque))
     (let* ((old-capacity (deque-capacity deque))
            (new-capacity (max required-capacity (* 2 old-capacity)))
@@ -661,6 +679,7 @@ is a no-op and does not call KEY."
             (deque-start deque) 0))))
 
 (defun deque--remove-front (deque)
+  "Remove and return DEQUE's first element, updating its count and total weight."
   (let* ((physical-index (deque-start deque))
          (element (aref (deque-storage deque) physical-index))
          (weight (deque--physical-weight deque physical-index)))
@@ -674,6 +693,7 @@ is a no-op and does not call KEY."
     element))
 
 (defun deque--remove-back (deque)
+  "Remove and return DEQUE's last element, updating its count and total weight."
   (let* ((physical-index (deque--physical-index deque (1- (deque-count deque))))
          (element (aref (deque-storage deque) physical-index))
          (weight (deque--physical-weight deque physical-index)))
@@ -685,12 +705,16 @@ is a no-op and does not call KEY."
     element))
 
 (defun deque--over-limit-p (deque)
+  "Return T when DEQUE holds more elements or weight than its limits allow."
   (or (and (deque-maximum-count deque)
            (> (deque-count deque) (deque-maximum-count deque)))
       (and (deque-maximum-weight deque)
            (> (deque-total-weight deque) (deque-maximum-weight deque)))))
 
 (defun deque--evict-to-limits (deque)
+  "Remove elements from DEQUE's eviction end until it fits its limits.
+
+Return a simple vector of the removed elements in removal order."
   (let ((evicted (make-array 0 :adjustable t :fill-pointer 0)))
     (loop while (deque--over-limit-p deque)
           do (vector-push-extend
