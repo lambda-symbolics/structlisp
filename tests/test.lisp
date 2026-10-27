@@ -11,6 +11,7 @@
      (pushnew ',name *tests*)))
 
 (defun test-equal (expected actual)
+  "Signal an error unless EXPECTED and ACTUAL are EQUALP."
   (assert (equalp expected actual) ()
           "Expected ~S, got ~S." expected actual))
 
@@ -1126,6 +1127,7 @@
 
 
 (defun test-interval-pairs (intervals)
+  "Return a vector of (START . END) conses for INTERVALS."
   (map 'vector
        (lambda (interval)
          (cons (integer-interval-start interval)
@@ -1133,6 +1135,7 @@
        intervals))
 
 (defun test-interval-map-triples (entries)
+  "Return a vector of (START END VALUE) lists for interval map ENTRIES."
   (map 'vector
        (lambda (entry)
          (list (integer-interval-entry-start entry)
