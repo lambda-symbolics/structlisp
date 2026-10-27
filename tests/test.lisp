@@ -144,8 +144,9 @@
     (handler-case
         (progn
           (deque-position 'two deque :test #'eql :test-not #'eql)
-          (error "Expected conflicting deque tests to fail."))
-      (error ()))))
+          (error "Expected DEQUE-TEST-CONFLICT-ERROR."))
+      (deque-test-conflict-error (condition)
+        (assert (eq deque (deque-error-deque condition)))))))
 
 (define-test test-deque-copy-and-predicate-position
   (let* ((source (make-deque :initial-capacity 9

@@ -56,6 +56,9 @@
    #:deque-range-error-start
    #:deque-range-error-end
    #:deque-range-error-count
+   #:deque-test-conflict-error
+   #:deque-test-conflict-error-test
+   #:deque-test-conflict-error-test-not
    ;; Bounded sequence builder
    #:bounded-sequence-builder
    #:make-bounded-sequence-builder

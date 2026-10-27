@@ -96,6 +96,21 @@
              (deque-range-error-count condition))))
   (:documentation "An operation received a range that is reversed or extends past the deque's end."))
 
+(define-condition deque-test-conflict-error (deque-error)
+  ((test
+    :initarg       :test
+    :reader        deque-test-conflict-error-test
+    :documentation "The supplied TEST function.")
+   (test-not
+    :initarg       :test-not
+    :reader        deque-test-conflict-error-test-not
+    :documentation "The supplied TEST-NOT function."))
+  (:report
+   (lambda (condition stream)
+     (declare (ignore condition))
+     (write-string "A deque search received both TEST and TEST-NOT." stream)))
+  (:documentation "A deque search received both TEST and TEST-NOT."))
+
 
 ;;;; -- Deque --
 
@@ -561,7 +576,10 @@ is a no-op and does not call KEY."
 (defun deque--position (item deque key test test-supplied-p
                         test-not test-not-supplied-p)
   (when (and test-supplied-p test-not-supplied-p)
-    (error "TEST and TEST-NOT may not both be supplied."))
+    (error 'deque-test-conflict-error
+           :deque    deque
+           :test     test
+           :test-not test-not))
   (check-type key (or function symbol))
   (check-type test (or function symbol))
   (when test-not-supplied-p
