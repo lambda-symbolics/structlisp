@@ -1,5 +1,3 @@
-;;;; priority-queue.lisp
-
 (in-package #:structlisp)
 
 

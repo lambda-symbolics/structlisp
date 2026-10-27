@@ -1,5 +1,3 @@
-;;;; ordered-map.lisp
-
 (in-package #:structlisp)
 
 

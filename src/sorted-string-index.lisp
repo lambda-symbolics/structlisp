@@ -1,5 +1,3 @@
-;;;; sorted-string-index.lisp
-
 (in-package #:structlisp)
 
 

@@ -1,5 +1,3 @@
-;;;; fifo-cache.lisp
-
 (in-package #:structlisp)
 
 

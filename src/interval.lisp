@@ -1,5 +1,3 @@
-;;;; interval.lisp
-
 (in-package #:structlisp)
 
 

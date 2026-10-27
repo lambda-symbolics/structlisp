@@ -1,5 +1,3 @@
-;;;; lru-cache.lisp
-
 (in-package #:structlisp)
 
 

@@ -1,5 +1,3 @@
-;;;; test.lisp
-
 (in-package #:structlisp)
 
 (defvar *tests* nil

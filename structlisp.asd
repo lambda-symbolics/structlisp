@@ -1,5 +1,3 @@
-;;;; structlisp.asd
-
 (in-package #:asdf-user)
 
 (defsystem "structlisp"

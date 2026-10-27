@@ -1,5 +1,3 @@
-;;;; bounded-sequence-builder.lisp
-
 (in-package #:structlisp)
 
 

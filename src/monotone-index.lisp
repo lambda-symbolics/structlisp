@@ -1,5 +1,3 @@
-;;;; monotone-index.lisp
-
 (in-package #:structlisp)
 
 

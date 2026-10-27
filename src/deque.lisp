@@ -1,5 +1,3 @@
-;;;; deque.lisp
-
 (in-package #:structlisp)
 
 
