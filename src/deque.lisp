@@ -1,27 +1,26 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition deque-error (error)
   ((deque
-    :initarg :deque
-    :reader deque-error-deque
+    :initarg       :deque
+    :reader        deque-error-deque
     :documentation "The deque involved in the error."))
   (:documentation "Base condition for deque operation failures."))
 
 (define-condition deque-index-error (deque-error)
   ((index
-    :initarg :index
-    :reader deque-index-error-index
+    :initarg       :index
+    :reader        deque-index-error-index
     :documentation "The invalid zero-based index.")
    (minimum
-    :initarg :minimum
-    :reader deque-index-error-minimum
+    :initarg       :minimum
+    :reader        deque-index-error-minimum
     :documentation "The smallest accepted index.")
    (maximum
-    :initarg :maximum
-    :reader deque-index-error-maximum
+    :initarg       :maximum
+    :reader        deque-index-error-maximum
     :documentation "The largest accepted index."))
   (:report
    (lambda (condition stream)
@@ -40,12 +39,12 @@
 
 (define-condition deque-weight-error (deque-error)
   ((element
-    :initarg :element
-    :reader deque-weight-error-element
+    :initarg       :element
+    :reader        deque-weight-error-element
     :documentation "The element whose weight was invalid.")
    (weight
-    :initarg :weight
-    :reader deque-weight-error-weight
+    :initarg       :weight
+    :reader        deque-weight-error-weight
     :documentation "The invalid weight value."))
   (:report
    (lambda (condition stream)
@@ -147,15 +146,15 @@ hold. Initial contents are inserted from left to right under the same policy."
     (error 'missing-weight-function-error :maximum-weight maximum-weight))
   (let* ((contents (coerce initial-contents 'vector))
          (capacity (max 1 initial-capacity (length contents)))
-         (deque (%make-deque
-                 :storage         (make-array capacity :initial-element nil)
-                 :weights         (and weight-function
-                                       (make-array capacity :initial-element nil))
-                 :maximum-count   maximum-count
-                 :maximum-weight  maximum-weight
-                 :weight-function (and weight-function
-                                       (coerce weight-function 'function))
-                 :eviction-end    eviction-end)))
+         (deque    (%make-deque
+                    :storage         (make-array capacity :initial-element nil)
+                    :weights         (and weight-function
+                                          (make-array capacity :initial-element nil))
+                    :maximum-count   maximum-count
+                    :maximum-weight  maximum-weight
+                    :weight-function (and weight-function
+                                          (coerce weight-function 'function))
+                    :eviction-end    eviction-end)))
     (loop for element across contents
           do (deque-push-back deque element))
     deque))
@@ -180,9 +179,9 @@ If DEQUE maintains weights, the cached total is adjusted. Replacement does
 not evict other elements; an overweight replacement signals an error."
   (deque--check-index deque index nil)
   (let* ((physical-index (deque--physical-index deque index))
-         (old-weight (deque--physical-weight deque physical-index))
-         (new-weight (deque--element-weight deque new-value))
-         (new-total (+ (- (deque-total-weight deque) old-weight) new-weight)))
+         (old-weight     (deque--physical-weight deque physical-index))
+         (new-weight     (deque--element-weight deque new-value))
+         (new-total      (+ (- (deque-total-weight deque) old-weight) new-weight)))
     (when (and (deque-maximum-weight deque)
                (> new-total (deque-maximum-weight deque)))
       (error 'deque-weight-limit-error
@@ -295,8 +294,8 @@ items. Insertion shifts the nearer end and is O(min(INDEX, COUNT-INDEX))."
      (deque--remove-back deque))
     (t
      (let* ((physical-index (deque--physical-index deque index))
-            (element (aref (deque-storage deque) physical-index))
-            (weight (deque--physical-weight deque physical-index)))
+            (element        (aref (deque-storage deque) physical-index))
+            (weight         (deque--physical-weight deque physical-index)))
        (if (< index (- (deque-count deque) index 1))
            (progn
              (loop for logical-index downfrom index above 0
@@ -325,7 +324,7 @@ function but no count or weight limits, so the split cannot discard data. The
 operation is linear in the suffix length."
   (deque--check-index deque index t)
   (let ((suffix (make-deque :initial-capacity (- (deque-count deque) index)
-                            :weight-function (deque-weight-function deque))))
+                            :weight-function  (deque-weight-function deque))))
     (loop while (> (deque-count deque) index)
           do (deque-push-front suffix (deque--remove-back deque)))
     suffix))
@@ -354,16 +353,16 @@ operation is linear in the suffix length."
 
 (defun deque-copy (deque)
   "Return an independent deque preserving DEQUE's contents and configuration."
-  (%make-deque :storage (copy-seq (deque-storage deque))
-               :weights (and (deque-weights deque)
-                             (copy-seq (deque-weights deque)))
-               :start (deque-start deque)
-               :count (deque-count deque)
-               :total-weight (deque-total-weight deque)
-               :maximum-count (deque-maximum-count deque)
-               :maximum-weight (deque-maximum-weight deque)
+  (%make-deque :storage         (copy-seq (deque-storage deque))
+               :weights         (and (deque-weights deque)
+                                     (copy-seq (deque-weights deque)))
+               :start           (deque-start deque)
+               :count           (deque-count deque)
+               :total-weight    (deque-total-weight deque)
+               :maximum-count   (deque-maximum-count deque)
+               :maximum-weight  (deque-maximum-weight deque)
                :weight-function (deque-weight-function deque)
-               :eviction-end (deque-eviction-end deque)))
+               :eviction-end    (deque-eviction-end deque)))
 
 (defun deque-position-if (predicate deque &key from-end
                                                (start 0)
@@ -386,7 +385,7 @@ before PREDICATE. Return NIL and NIL when no element matches."
              :end   end
              :count (deque-count deque)))
     (let ((predicate-function (coerce predicate 'function))
-          (key-function (coerce key 'function)))
+          (key-function       (coerce key 'function)))
       (if from-end
           (loop for index downfrom (1- end) to start
                 when (funcall predicate-function
@@ -459,7 +458,7 @@ a vector containing all policy-evicted elements in removal order."
   (let ((elements (if (deque-p sequence)
                       (deque->vector sequence)
                       (coerce sequence 'vector)))
-        (evicted (make-array 0 :adjustable t :fill-pointer 0)))
+        (evicted  (make-array 0 :adjustable t :fill-pointer 0)))
     (loop for element across elements
           do (multiple-value-bind (ignored newly-evicted)
                  (deque-push-back deque element)
@@ -475,7 +474,7 @@ Traversal and KEY application use a snapshot, so DEQUE may also be the source.
 Return DEQUE, a vector of policy-evicted elements in removal order, and a vector
 of the transformed elements in front-to-back order."
   (let ((elements (deque--mapped-vector sequence key))
-        (evicted (make-array 0 :adjustable t :fill-pointer 0)))
+        (evicted  (make-array 0 :adjustable t :fill-pointer 0)))
     (loop for element across elements
           do (deque--element-weight deque element))
     (loop for index downfrom (1- (length elements)) to 0
@@ -500,10 +499,10 @@ error leaves both deques unchanged."
   (when (eq source target)
     (return-from deque-move-if (values target #() #())))
   (let* ((predicate-function (coerce predicate 'function))
-         (key-function (coerce key 'function))
-         (elements (deque->vector source))
-         (moved (make-array 0 :adjustable t :fill-pointer 0))
-         (retained (make-array 0 :adjustable t :fill-pointer 0)))
+         (key-function       (coerce key 'function))
+         (elements           (deque->vector source))
+         (moved              (make-array 0 :adjustable t :fill-pointer 0))
+         (retained           (make-array 0 :adjustable t :fill-pointer 0)))
     (loop for element across elements
           do (vector-push-extend
               element
@@ -563,7 +562,7 @@ is a no-op and does not call KEY."
   (let* ((elements (if (deque-p sequence)
                        (deque->vector sequence)
                        (coerce sequence 'vector)))
-         (result (make-array (length elements)))
+         (result   (make-array (length elements)))
          (function (coerce key 'function)))
     (loop for index below (length elements)
           do (setf (aref result index)
@@ -582,11 +581,10 @@ is a no-op and does not call KEY."
                      (1- (deque-count deque)))))
     (unless (<= 0 index maximum)
       (error 'deque-index-error
-             :deque deque
-             :index index
+             :deque   deque
+             :index   index
              :minimum 0
              :maximum maximum))))
-
 
 (defun deque--position (item deque &key key test test-supplied-p test-not test-not-supplied-p)
   "Return the index of the first DEQUE element matching ITEM and true, or NIL and NIL.
@@ -602,7 +600,7 @@ TEST-NOT-SUPPLIED-P say which of TEST and TEST-NOT the caller passed."
   (check-type test (or function symbol))
   (when test-not-supplied-p
     (check-type test-not (or function symbol)))
-  (let ((key-function (coerce key 'function))
+  (let ((key-function  (coerce key 'function))
         (test-function (coerce (if test-not-supplied-p test-not test)
                                'function)))
     (loop for index below (deque-count deque)
@@ -623,9 +621,9 @@ Signal DEQUE-WEIGHT-ERROR unless the weight is a non-negative integer."
                     0)))
     (unless (typep weight '(integer 0 *))
       (error 'deque-weight-error
-             :deque deque
+             :deque   deque
              :element element
-             :weight weight))
+             :weight  weight))
     weight))
 
 (defun deque--physical-weight (deque physical-index)
@@ -664,9 +662,9 @@ index 0."
   (when (> required-capacity (deque-capacity deque))
     (let* ((old-capacity (deque-capacity deque))
            (new-capacity (max required-capacity (* 2 old-capacity)))
-           (new-storage (make-array new-capacity :initial-element nil))
-           (new-weights (and (deque-weights deque)
-                             (make-array new-capacity :initial-element nil))))
+           (new-storage  (make-array new-capacity :initial-element nil))
+           (new-weights  (and (deque-weights deque)
+                              (make-array new-capacity :initial-element nil))))
       (loop for index below (deque-count deque)
             for old-index = (deque--physical-index deque index)
             do (setf (aref new-storage index)
@@ -681,8 +679,8 @@ index 0."
 (defun deque--remove-front (deque)
   "Remove and return DEQUE's first element, updating its count and total weight."
   (let* ((physical-index (deque-start deque))
-         (element (aref (deque-storage deque) physical-index))
-         (weight (deque--physical-weight deque physical-index)))
+         (element        (aref (deque-storage deque) physical-index))
+         (weight         (deque--physical-weight deque physical-index)))
     (deque--clear-physical-slot deque physical-index)
     (setf (deque-start deque)
           (if (= (deque-count deque) 1)
@@ -695,8 +693,8 @@ index 0."
 (defun deque--remove-back (deque)
   "Remove and return DEQUE's last element, updating its count and total weight."
   (let* ((physical-index (deque--physical-index deque (1- (deque-count deque))))
-         (element (aref (deque-storage deque) physical-index))
-         (weight (deque--physical-weight deque physical-index)))
+         (element        (aref (deque-storage deque) physical-index))
+         (weight         (deque--physical-weight deque physical-index)))
     (deque--clear-physical-slot deque physical-index)
     (decf (deque-count deque))
     (decf (deque-total-weight deque) weight)
@@ -719,7 +717,9 @@ Return a simple vector of the removed elements in removal order."
     (loop while (deque--over-limit-p deque)
           do (vector-push-extend
               (ecase (deque-eviction-end deque)
-                (:front (deque--remove-front deque))
-                (:back (deque--remove-back deque)))
+                (:front
+                 (deque--remove-front deque))
+                (:back
+                 (deque--remove-back deque)))
               evicted))
     (coerce evicted 'simple-vector)))

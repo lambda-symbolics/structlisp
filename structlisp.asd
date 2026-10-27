@@ -2,32 +2,32 @@
 
 (defsystem "structlisp"
   :description "General-purpose data structures for interactive Common Lisp systems."
-  :author "Lukáš Hozda"
-  :license "COLL-Attribution"
-  :version "0.1.0"
-  :pathname "src"
-  :serial t
-  :components ((:file "package")
-               (:file "conditions")
-               (:file "deque")
-               (:file "bounded-sequence-builder")
-               (:file "priority-queue")
-               (:file "sorted-string-index")
-               (:file "ordered-map")
-               (:file "fifo-cache")
-               (:file "lru-cache")
-               (:file "interval")
-               (:file "monotone-index"))
+  :author      "Lukáš Hozda"
+  :license     "COLL-Attribution"
+  :version     "0.1.0"
+  :pathname    "src"
+  :serial      t
+  :components  ((:file "package")
+                (:file "conditions")
+                (:file "deque")
+                (:file "bounded-sequence-builder")
+                (:file "priority-queue")
+                (:file "sorted-string-index")
+                (:file "ordered-map")
+                (:file "fifo-cache")
+                (:file "lru-cache")
+                (:file "interval")
+                (:file "monotone-index"))
   :in-order-to ((test-op (test-op "structlisp/tests"))))
 
 (defsystem "structlisp/tests"
   :description "Tests for Structlisp."
-  :depends-on ("structlisp")
-  :pathname "tests"
-  :serial t
-  :components ((:file "test")
-               (:file "bounded-sequence-builder-test"))
-  :perform (test-op (operation component)
-             (declare (ignore operation component))
-             (unless (uiop:symbol-call '#:structlisp '#:run-tests)
-               (error "Structlisp tests failed."))))
+  :depends-on  ("structlisp")
+  :pathname    "tests"
+  :serial      t
+  :components  ((:file "test")
+                (:file "bounded-sequence-builder-test"))
+  :perform     (test-op (operation component)
+                 (declare (ignore operation component))
+                 (unless (uiop:symbol-call '#:structlisp '#:run-tests)
+                   (error "Structlisp tests failed."))))

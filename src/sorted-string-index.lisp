@@ -1,23 +1,22 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition sorted-string-index-error (error)
   ((index
-    :initarg :index
-    :reader sorted-string-index-error-index
+    :initarg       :index
+    :reader        sorted-string-index-error-index
     :documentation "The sorted string index involved in the error."))
   (:documentation "Base condition for sorted string index failures."))
 
 (define-condition sorted-string-index-key-error (sorted-string-index-error)
   ((item
-    :initarg :item
-    :reader sorted-string-index-key-error-item
+    :initarg       :item
+    :reader        sorted-string-index-key-error-item
     :documentation "The item whose normalized key was invalid.")
    (key
-    :initarg :key
-    :reader sorted-string-index-key-error-key
+    :initarg       :key
+    :reader        sorted-string-index-key-error-key
     :documentation "The invalid normalized key."))
   (:report
    (lambda (condition stream)
@@ -49,9 +48,9 @@ per query and candidate. Later mutation of an item does not update its key.
 Equal keys retain input order."
   (check-type key (or function symbol))
   (check-type normalizer (or function symbol))
-  (let* ((index (sorted-string-index--make
-                 :key-function (coerce key 'function)
-                 :normalizer   (coerce normalizer 'function)))
+  (let* ((index   (sorted-string-index--make
+                   :key-function (coerce key 'function)
+                   :normalizer   (coerce normalizer 'function)))
          (entries (make-array 0 :adjustable t :fill-pointer 0)))
     (map nil
          (lambda (item)
@@ -123,7 +122,7 @@ index."
   "Insert ITEM after existing equal keys and return its sorted position.
 
 The normalized key is copied; later mutation of ITEM does not update it."
-  (let* ((key (sorted-string-index--item-key index item))
+  (let* ((key      (sorted-string-index--item-key index item))
          (position (sorted-string-index--upper-bound-key index key)))
     (setf (sorted-string-index-items index)
           (sorted-string-index--vector-insert
@@ -171,8 +170,8 @@ Signal SORTED-STRING-INDEX-KEY-ERROR unless the key is a string."
     (unless (stringp key)
       (error 'sorted-string-index-key-error
              :index index
-             :item item
-             :key key))
+             :item  item
+             :key   key))
     (copy-seq key)))
 
 (defun sorted-string-index--query-key (index query)
@@ -183,8 +182,8 @@ Signal SORTED-STRING-INDEX-KEY-ERROR unless the result is a string."
     (unless (stringp key)
       (error 'sorted-string-index-key-error
              :index index
-             :item query
-             :key key))
+             :item  query
+             :key   key))
     key))
 
 (defun sorted-string-index--key-at (index position)
@@ -193,7 +192,7 @@ Signal SORTED-STRING-INDEX-KEY-ERROR unless the result is a string."
 
 (defun sorted-string-index--lower-bound-key (index query-key)
   "Return the position of the first key in INDEX not less than QUERY-KEY."
-  (let ((low 0)
+  (let ((low  0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -205,7 +204,7 @@ Signal SORTED-STRING-INDEX-KEY-ERROR unless the result is a string."
 
 (defun sorted-string-index--upper-bound-key (index query-key)
   "Return the position of the first key in INDEX greater than QUERY-KEY."
-  (let ((low 0)
+  (let ((low  0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -220,7 +219,7 @@ Signal SORTED-STRING-INDEX-KEY-ERROR unless the result is a string."
 
 Return -1 when KEY sorts before every key that starts with PREFIX, and 1 when
 it sorts after them."
-  (let* ((key-length (length key))
+  (let* ((key-length    (length key))
          (prefix-length (length prefix))
          (shared-length (min key-length prefix-length)))
     (loop for position below shared-length
@@ -231,15 +230,17 @@ it sorts after them."
           when (char> key-character prefix-character)
             do (return-from sorted-string-index--prefix-compare 1))
     (cond
-      ((< key-length prefix-length) -1)
-      (t 0))))
+      ((< key-length prefix-length)
+       -1)
+      (t
+       0))))
 
 (defun sorted-string-index--prefix-bound (index prefix upper-p)
   "Return the bound of the keys in INDEX that start with PREFIX.
 
 Return the position of the first such key, or with UPPER-P true, the position
 after the last one."
-  (let ((low 0)
+  (let ((low  0)
         (high (sorted-string-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -254,7 +255,7 @@ after the last one."
 
 (defun sorted-string-index--vector-insert (vector position item)
   "Return a fresh vector of VECTOR's elements with ITEM inserted at POSITION."
-  (let* ((count (length vector))
+  (let* ((count  (length vector))
          (result (make-array (1+ count))))
     (replace result vector :end1 position :end2 position)
     (setf (aref result position) item)
@@ -263,7 +264,7 @@ after the last one."
 
 (defun sorted-string-index--vector-remove (vector position)
   "Return a fresh vector of VECTOR's elements without the one at POSITION."
-  (let* ((count (length vector))
+  (let* ((count  (length vector))
          (result (make-array (1- count))))
     (replace result vector :end1 position :end2 position)
     (replace result vector :start1 position :start2 (1+ position))

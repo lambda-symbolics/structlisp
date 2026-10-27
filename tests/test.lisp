@@ -38,14 +38,14 @@
     (test-equal #(a see d) (deque->vector deque))))
 
 (define-test test-deque-split
-  (let* ((deque (make-deque :initial-contents '(0 1 2 3)))
+  (let* ((deque  (make-deque :initial-contents '(0 1 2 3)))
          (suffix (deque-split-at deque 2)))
     (test-equal #(0 1) (deque->vector deque))
     (test-equal #(2 3) (deque->vector suffix))))
 
 (define-test test-deque-budgets
-  (let ((deque (make-deque :maximum-count 3
-                           :maximum-weight 5
+  (let ((deque (make-deque :maximum-count   3
+                           :maximum-weight  5
                            :weight-function #'length)))
     (deque-push-back deque "aa")
     (deque-push-back deque "b")
@@ -61,10 +61,9 @@
       (test-equal #("b" "ccc" "123456") evicted))
     (assert (deque-empty-p deque))))
 
-
 (define-test test-deque-budget-edge-cases
-  (let ((back-evicting (make-deque :maximum-count 2
-                                    :eviction-end :back
+  (let ((back-evicting (make-deque :maximum-count     2
+                                    :eviction-end     :back
                                     :initial-contents '(a b c))))
     (test-equal #(a b) (deque->vector back-evicting))
     (multiple-value-bind (element evicted)
@@ -72,11 +71,11 @@
       (test-equal 'z element)
       (test-equal #(b) evicted))
     (test-equal #(z a) (deque->vector back-evicting)))
-  (let ((empty (make-deque :maximum-count 0
+  (let ((empty (make-deque :maximum-count    0
                            :initial-contents '(a b))))
     (assert (deque-empty-p empty)))
-  (let ((weighted (make-deque :maximum-weight 4
-                              :weight-function #'length
+  (let ((weighted (make-deque :maximum-weight   4
+                              :weight-function  #'length
                               :initial-contents '("a" "bb"))))
     (setf (deque-ref weighted 0) "aa")
     (test-equal 4 (deque-total-weight weighted))
@@ -114,23 +113,23 @@
       (setf (first snapshot) 'changed)
       (test-equal #(two three nil ("Beta" value)) (deque->vector deque)))
     (multiple-value-bind (position present-p)
-        (deque-position "beta" deque :key (lambda (element)
-                                             (and (consp element)
-                                                  (first element)))
+        (deque-position "beta" deque :key   (lambda (element)
+                                               (and (consp element)
+                                                    (first element)))
                                       :test #'equalp)
       (test-equal 3 position)
       (assert present-p))
     (multiple-value-bind (position present-p)
         (deque-position 5
                         (make-deque :initial-contents '((3 low) (7 high)))
-                        :key #'first
+                        :key  #'first
                         :test #'<)
       (test-equal 1 position)
       (assert present-p))
     (multiple-value-bind (position present-p)
         (deque-position 5
                         (make-deque :initial-contents '((3 low) (7 high)))
-                        :key #'first
+                        :key      #'first
                         :test-not #'<)
       (test-equal 0 position)
       (assert present-p))
@@ -152,11 +151,11 @@
 (define-test test-deque-copy-and-predicate-position
   (let* ((source (make-deque :initial-capacity 9
                              :initial-contents '(1 2 3 4)
-                             :maximum-count 6
-                             :maximum-weight 20
-                             :weight-function #'identity
-                             :eviction-end :back))
-         (copy (deque-copy source)))
+                             :maximum-count    6
+                             :maximum-weight   20
+                             :weight-function  #'identity
+                             :eviction-end     :back))
+         (copy   (deque-copy source)))
     (assert (not (eq source copy)))
     (test-equal #(1 2 3 4) (deque->vector copy))
     (test-equal (deque-capacity source) (deque-capacity copy))
@@ -181,7 +180,7 @@
     (assert (null (nth-value 1
                             (deque-position-if #'oddp source
                                                :start 1
-                                               :end 2))))
+                                               :end   2))))
     (handler-case
         (progn
           (deque-position-if #'identity source :start 3 :end 2)
@@ -194,7 +193,7 @@
 (define-test test-deque-delete
   (let ((deque (make-deque :initial-capacity 4
                            :initial-contents '("a" "bb" "ccc" "dddd")
-                           :weight-function #'length)))
+                           :weight-function  #'length)))
     (deque-pop-front deque)
     (deque-push-back deque "ee")
     (multiple-value-bind (element present-p)
@@ -226,8 +225,8 @@
 
 (define-test test-deque-prepend
   (let ((target (make-deque :initial-contents '("old" "tail")
-                            :maximum-count 4
-                            :eviction-end :back)))
+                            :maximum-count    4
+                            :eviction-end     :back)))
     (multiple-value-bind (result evicted transformed)
         (deque-prepend target '(a bb ccc) :key #'string-downcase)
       (assert (eq target result))
@@ -241,9 +240,9 @@
 (define-test test-deque-move-if
   (let ((source (make-deque :initial-capacity 4
                             :initial-contents '(1 2 3 4 5)
-                            :weight-function #'identity))
+                            :weight-function  #'identity))
         (target (make-deque :initial-contents '(0)
-                            :maximum-count 3)))
+                            :maximum-count    3)))
     (deque-pop-front source)
     (deque-push-back source 6)
     (multiple-value-bind (result evicted moved)
@@ -260,11 +259,11 @@
     (test-equal '((1 odd) (3 odd)) (deque->list source))
     (test-equal '((2 even)) (deque->list target)))
   (let ((source (make-deque :initial-contents '("aa" "bbb" "c")
-                            :weight-function #'length))
+                            :weight-function  #'length))
         (target (make-deque :initial-contents '("old")
-                            :maximum-weight 5
-                            :weight-function #'length
-                            :eviction-end :back)))
+                            :maximum-weight   5
+                            :weight-function  #'length
+                            :eviction-end     :back)))
     (multiple-value-bind (ignored evicted moved)
         (deque-move-if (lambda (value) (<= (length value) 2)) source target)
       (declare (ignore ignored))
@@ -302,14 +301,14 @@
       (deque-weight-error ()))
     (test-equal '(good bad untouched) (deque->list source))
     (assert (deque-empty-p target)))
-  (let* ((calls 0)
-         (source (make-deque :initial-contents '(a b)))
-         (target (make-deque
-                  :weight-function (lambda (element)
-                                     (declare (ignore element))
-                                     (when (= (incf calls) 2)
-                                       (error "late target failure"))
-                                     1)))
+  (let* ((calls   0)
+         (source  (make-deque :initial-contents '(a b)))
+         (target  (make-deque
+                   :weight-function (lambda (element)
+                                      (declare (ignore element))
+                                      (when (= (incf calls) 2)
+                                        (error "late target failure"))
+                                      1)))
          (failure nil))
     (handler-case
         (progn
@@ -321,16 +320,16 @@
     (assert failure)
     (test-equal '(a b) (deque->list source))
     (assert (deque-empty-p target)))
-  (let* ((calls 0)
+  (let* ((calls   0)
          (armed-p nil)
-         (source (make-deque
-                  :initial-contents '(1 2 3)
-                  :weight-function (lambda (element)
-                                     (declare (ignore element))
-                                     (when (and armed-p (= (incf calls) 2))
-                                       (error "late source failure"))
-                                     1)))
-         (target (make-deque))
+         (source  (make-deque
+                   :initial-contents '(1 2 3)
+                   :weight-function  (lambda (element)
+                                       (declare (ignore element))
+                                       (when (and armed-p (= (incf calls) 2))
+                                         (error "late source failure"))
+                                       1)))
+         (target  (make-deque))
          (failure nil))
     (setf calls 0
           armed-p t)
@@ -344,8 +343,8 @@
     (assert failure)
     (test-equal '(1 2 3) (deque->list source))
     (assert (deque-empty-p target)))
-  (let ((source (make-deque :initial-contents '(1 2 3)))
-        (target (make-deque :initial-contents '(old)))
+  (let ((source  (make-deque :initial-contents '(1 2 3)))
+        (target  (make-deque :initial-contents '(old)))
         (failure nil))
     (handler-case
         (progn
@@ -388,11 +387,11 @@
 (define-test test-deque-move-all
   (let ((source (make-deque :initial-capacity 4
                             :initial-contents '("a" "bb" "ccc")
-                            :weight-function #'length))
+                            :weight-function  #'length))
         (target (make-deque :initial-contents '("old")
-                            :maximum-count 3
-                            :maximum-weight 7
-                            :weight-function #'length)))
+                            :maximum-count    3
+                            :maximum-weight   7
+                            :weight-function  #'length)))
     (deque-pop-front source)
     (deque-push-back source "d")
     (multiple-value-bind (result evicted)
@@ -444,7 +443,6 @@
             (error "Expected DEQUE-WEIGHT-ERROR."))
         (deque-weight-error ())))))
 
-
 (define-test test-priority-queue-stability
   (let ((queue (make-priority-queue)))
     (priority-queue-push queue 'late 5)
@@ -488,7 +486,7 @@
     (test-equal #(ten first-five nil one) (priority-queue->vector queue))
     (test-equal '(ten first-five nil one) (priority-queue->list queue))
     (let ((vector-snapshot (priority-queue->vector queue))
-          (list-snapshot (priority-queue->list queue)))
+          (list-snapshot   (priority-queue->list queue)))
       (setf (aref vector-snapshot 0) 'changed
             (first list-snapshot) 'changed)
       (test-equal #(ten first-five nil one) (priority-queue->vector queue)))
@@ -512,7 +510,7 @@
 (define-test test-sorted-string-index-prefixes
   (let ((index (make-sorted-string-index
                 :initial-contents '("Beta" "alpine" "alpha" "alphabet")
-                :normalizer #'string-downcase)))
+                :normalizer       #'string-downcase)))
     (test-equal #("alpha" "alphabet" "alpine" "Beta")
                 (sorted-string-index->vector index))
     (multiple-value-bind (start end)
@@ -535,11 +533,10 @@
     (test-equal #("a" "b" "d")
                 (sorted-string-index->vector index))))
 
-
 (define-test test-sorted-string-index-copies-keys
   (let* ((middle (copy-seq "b"))
-         (index (make-sorted-string-index
-                 :initial-contents (list "a" middle "c"))))
+         (index  (make-sorted-string-index
+                  :initial-contents (list "a" middle "c"))))
     (setf (char middle 0) #\z)
     (multiple-value-bind (start end)
         (sorted-string-index-prefix-range index "b")
@@ -556,9 +553,8 @@
       (assert (eq item middle))
       (assert removed-p))))
 
-
 (define-test test-ordered-map-order
-  (let ((map (make-ordered-map :test 'equal
+  (let ((map (make-ordered-map :test             'equal
                                :initial-contents '(("a" . 1) ("b" . 2)))))
     (ordered-map-set map "c" 3)
     (ordered-map-set map "b" 20)
@@ -593,9 +589,8 @@
                 map))
     (test-equal '((a . 1) (c . 3)) (ordered-map->alist map))))
 
-
 (define-test test-ordered-map-snapshot-traversal
-  (let ((map (make-ordered-map :initial-contents '((a . 1) (b . 2) (c . 3))))
+  (let ((map     (make-ordered-map :initial-contents '((a . 1) (b . 2) (c . 3))))
         (visited nil))
     (ordered-map-map
      (lambda (key value)
@@ -606,9 +601,8 @@
     (test-equal '((a . 1) (b . 2) (c . 3)) (nreverse visited))
     (assert (ordered-map-empty-p map))))
 
-
 (define-test test-fifo-cache-order-and-nil-values
-  (let ((cache (make-fifo-cache :test 'equalp
+  (let ((cache (make-fifo-cache :test             'equalp
                                 :initial-contents '(("One") ("two" . 2)))))
     (multiple-value-bind (value present-p)
         (fifo-cache-get cache "ONE" :missing)
@@ -720,10 +714,10 @@
 (define-test test-fifo-cache-count-eviction-order
   (let ((callbacks nil))
     (let ((cache (make-fifo-cache
-                  :maximum-count 2
+                  :maximum-count     2
                   :eviction-function (lambda (key value)
                                        (push (cons key value) callbacks))
-                  :initial-contents '((a . 1) (b . 2) (c . 3)))))
+                  :initial-contents  '((a . 1) (b . 2) (c . 3)))))
       (test-equal '((b . 2) (c . 3)) (fifo-cache->alist cache))
       (test-equal '((a . 1)) (nreverse callbacks))
       (setf callbacks nil)
@@ -736,15 +730,15 @@
 
 (define-test test-fifo-cache-budgets-and-callbacks
   (let* ((callback-entries nil)
-         (cache (make-fifo-cache
-                 :maximum-count 3
-                 :maximum-weight 5
-                 :weight-function (lambda (key value)
-                                    (declare (ignore key))
-                                    (length value))
-                 :eviction-function (lambda (key value)
-                                      (push (cons key value)
-                                            callback-entries)))))
+         (cache            (make-fifo-cache
+                            :maximum-count     3
+                            :maximum-weight    5
+                            :weight-function   (lambda (key value)
+                                                 (declare (ignore key))
+                                                 (length value))
+                            :eviction-function (lambda (key value)
+                                                 (push (cons key value)
+                                                       callback-entries)))))
     (fifo-cache-put cache 'a "aa")
     (fifo-cache-put cache 'b "b")
     (fifo-cache-put cache 'c "cc")
@@ -765,11 +759,11 @@
     (test-equal '((a . "aa") (b . "b") (c . "123456"))
                 (nreverse callback-entries)))
   (let* ((callbacks 0)
-         (cache (make-fifo-cache :maximum-count 0
-                                 :eviction-function
-                                 (lambda (key value)
-                                   (declare (ignore key value))
-                                   (incf callbacks)))))
+         (cache     (make-fifo-cache :maximum-count 0
+                                     :eviction-function
+                                     (lambda (key value)
+                                       (declare (ignore key value))
+                                       (incf callbacks)))))
     (multiple-value-bind (value evicted)
         (fifo-cache-put cache 'nil-value nil)
       (assert (null value))
@@ -778,7 +772,7 @@
     (test-equal 0 (fifo-cache-total-weight cache))
     (test-equal 1 callbacks))
   (let ((cache (make-fifo-cache
-                :maximum-weight 0
+                :maximum-weight  0
                 :weight-function (lambda (key value)
                                    (declare (ignore key))
                                    (length value)))))
@@ -792,7 +786,7 @@
 
 (define-test test-fifo-cache-key-value-weighting
   (let ((cache (make-fifo-cache
-                :maximum-weight 4
+                :maximum-weight  4
                 :weight-function (lambda (key value)
                                    (+ (length (symbol-name key))
                                       (length value))))))
@@ -807,15 +801,15 @@
 
 (define-test test-fifo-cache-predicate-deletion
   (let* ((callbacks 0)
-         (cache (make-fifo-cache
-                 :weight-function (lambda (key value)
-                                    (declare (ignore key))
-                                    (second value))
-                 :eviction-function (lambda (key value)
-                                      (declare (ignore key value))
-                                      (incf callbacks))
-                 :initial-contents
-                 '((a :alpha 2) (b :beta 3) (c :alpha 4)))))
+         (cache     (make-fifo-cache
+                     :weight-function   (lambda (key value)
+                                          (declare (ignore key))
+                                          (second value))
+                     :eviction-function (lambda (key value)
+                                          (declare (ignore key value))
+                                          (incf callbacks))
+                     :initial-contents
+                     '((a :alpha 2) (b :beta 3) (c :alpha 4)))))
     (test-equal 9 (fifo-cache-total-weight cache))
     (multiple-value-bind (key value present-p)
         (fifo-cache-delete-first-if
@@ -902,7 +896,7 @@
 (define-test test-fifo-cache-eviction-callback-failures
   (let ((calls nil))
     (let ((cache (make-fifo-cache
-                  :maximum-weight 3
+                  :maximum-weight  3
                   :weight-function (lambda (key value)
                                      (declare (ignore key))
                                      value)
@@ -943,11 +937,11 @@
       (test-equal 0 (fifo-cache-total-weight cache)))))
 
 (define-test test-fifo-cache-snapshot-traversal
-  (let ((cache (make-fifo-cache :initial-contents '((a . 1) (b . 2) (c . 3))))
+  (let ((cache   (make-fifo-cache :initial-contents '((a . 1) (b . 2) (c . 3))))
         (visited nil))
-    (let ((keys (fifo-cache-keys cache))
+    (let ((keys   (fifo-cache-keys cache))
           (values (fifo-cache-values cache))
-          (alist (fifo-cache->alist cache)))
+          (alist  (fifo-cache->alist cache)))
       (setf (aref keys 0) 'changed
             (aref values 0) 99
             (first (first alist)) 'changed)
@@ -966,7 +960,7 @@
 (define-test test-fifo-cache-invalid-weights
   (dolist (invalid-weight '(-1 nil 1/2))
     (let* ((cache (make-fifo-cache
-                   :maximum-weight 5
+                   :maximum-weight  5
                    :weight-function (lambda (key value)
                                       (declare (ignore key value))
                                       invalid-weight)))
@@ -1032,7 +1026,6 @@
       (test-equal :empty value)
       (assert (null present-p)))))
 
-
 (define-test test-lru-cache-recency-and-count
   (let ((cache (make-lru-cache :maximum-count 2)))
     (lru-cache-put cache 'a 1)
@@ -1046,24 +1039,23 @@
 
 (define-test test-lru-cache-weight
   (let* ((evicted nil)
-         (cache (make-lru-cache
-                 :maximum-weight 4
-                 :weight-function (lambda (key value)
-                                    (declare (ignore key))
-                                    (length value))
-                 :eviction-function (lambda (key value)
-                                      (push (cons key value) evicted)))))
+         (cache   (make-lru-cache
+                   :maximum-weight    4
+                   :weight-function   (lambda (key value)
+                                        (declare (ignore key))
+                                        (length value))
+                   :eviction-function (lambda (key value)
+                                        (push (cons key value) evicted)))))
     (lru-cache-put cache 'a "aa")
     (lru-cache-put cache 'b "bbb")
     (test-equal #(b) (lru-cache-keys cache))
     (test-equal 3 (lru-cache-total-weight cache))
     (test-equal '((a . "aa")) evicted)))
 
-
 (define-test test-lru-cache-budget-edge-cases
   (let ((cache (make-lru-cache
-                :maximum-count 2
-                :maximum-weight 4
+                :maximum-count   2
+                :maximum-weight  4
                 :weight-function (lambda (key value)
                                    (declare (ignore key))
                                    (length value)))))
@@ -1091,9 +1083,8 @@
                (test-equal calls value)))
     (test-equal 2 calls)))
 
-
 (define-test test-lru-cache-snapshot-traversal
-  (let ((cache (make-lru-cache))
+  (let ((cache   (make-lru-cache))
         (visited nil))
     (lru-cache-put cache 'a 1)
     (lru-cache-put cache 'b 2)
@@ -1124,7 +1115,6 @@
       (test-equal 42 value)
       (assert hit-p))
     (test-equal 1 calls)))
-
 
 (defun test-interval-pairs (intervals)
   "Return a vector of (START . END) conses for INTERVALS."
@@ -1159,11 +1149,11 @@
     (assert (integer-interval-set-intersects-p set 9 12))))
 
 (define-test test-integer-interval-set-operations
-  (let* ((left (make-integer-interval-set :intervals '((1 . 5) (8 . 10))))
-         (right (make-integer-interval-set :intervals '((3 . 9))))
-         (union (integer-interval-set-union left right))
+  (let* ((left         (make-integer-interval-set :intervals '((1 . 5) (8 . 10))))
+         (right        (make-integer-interval-set :intervals '((3 . 9))))
+         (union        (integer-interval-set-union left right))
          (intersection (integer-interval-set-intersection left right))
-         (difference (integer-interval-set-difference left right)))
+         (difference   (integer-interval-set-difference left right)))
     (test-equal #((1 . 10))
                 (test-interval-pairs
                  (integer-interval-set->vector union)))
@@ -1192,7 +1182,6 @@
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))))
 
-
 (define-test test-integer-interval-map-linear-rewrites
   (let ((map (make-integer-interval-map
               :entries '((0 2 a) (2 4 a) (6 8 b)))))
@@ -1208,10 +1197,9 @@
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))))
 
-
 (define-test test-monotone-integer-index-search
   (let ((index (make-monotone-integer-index
-                :element-bits 32
+                :element-bits     32
                 :initial-contents '(1 3 3 8 13))))
     (test-equal 1 (monotone-integer-index-lower-bound index 3))
     (test-equal 3 (monotone-integer-index-upper-bound index 3))
@@ -1231,7 +1219,7 @@
       (assert present-p))))
 
 (define-test test-monotone-integer-index-failures
-  (let ((index (make-monotone-integer-index :element-bits 8
+  (let ((index (make-monotone-integer-index :element-bits      8
                                              :initial-contents '(1 2))))
     (handler-case
         (progn

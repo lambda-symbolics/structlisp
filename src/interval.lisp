@@ -1,16 +1,15 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions and records --
 
 (define-condition integer-interval-error (error)
   ((start
-    :initarg :start
-    :reader integer-interval-error-start
+    :initarg       :start
+    :reader        integer-interval-error-start
     :documentation "The invalid interval start.")
    (end
-    :initarg :end
-    :reader integer-interval-error-end
+    :initarg       :end
+    :reader        integer-interval-error-end
     :documentation "The invalid interval end."))
   (:report
    (lambda (condition stream)
@@ -69,9 +68,9 @@
   (integer-interval--validate start end)
   (when (= start end)
     (return-from integer-interval-set-add set))
-  (let ((result nil)
-        (new-start start)
-        (new-end end)
+  (let ((result     nil)
+        (new-start  start)
+        (new-end    end)
         (inserted-p nil))
     (loop for interval across (integer-interval-set-intervals set)
           for interval-start = (integer-interval-start interval)
@@ -148,9 +147,9 @@
   "Return a fresh interval set containing the union of LEFT and RIGHT.
 
 The canonical input vectors are merged in O(n + m) time."
-  (let ((result (integer-interval-set--make))
-        (intervals (make-array 0 :adjustable t :fill-pointer 0))
-        (left-position 0)
+  (let ((result         (integer-interval-set--make))
+        (intervals      (make-array 0 :adjustable t :fill-pointer 0))
+        (left-position  0)
         (right-position 0))
     (loop while (or (< left-position (integer-interval-set-count left))
                     (< right-position (integer-interval-set-count right)))
@@ -180,9 +179,9 @@ The canonical input vectors are merged in O(n + m) time."
 
 (defun integer-interval-set-intersection (left right)
   "Return a fresh interval set containing the intersection of LEFT and RIGHT."
-  (let ((result (integer-interval-set--make))
-        (intervals nil)
-        (left-position 0)
+  (let ((result         (integer-interval-set--make))
+        (intervals      nil)
+        (left-position  0)
         (right-position 0))
     (loop while (and (< left-position (integer-interval-set-count left))
                      (< right-position (integer-interval-set-count right)))
@@ -208,8 +207,8 @@ The canonical input vectors are merged in O(n + m) time."
   "Return a fresh interval set containing LEFT minus RIGHT.
 
 The canonical input vectors are subtracted in O(n + m) time."
-  (let ((result (integer-interval-set--make))
-        (intervals (make-array 0 :adjustable t :fill-pointer 0))
+  (let ((result         (integer-interval-set--make))
+        (intervals      (make-array 0 :adjustable t :fill-pointer 0))
         (right-position 0))
     (loop for left-interval across (integer-interval-set-intervals left)
           for left-start = (integer-interval-start left-interval)
@@ -221,7 +220,7 @@ The canonical input vectors are subtracted in O(n + m) time."
                                          right-position))
                                   left-start))
                    do (incf right-position))
-             (let ((cursor left-start)
+             (let ((cursor        left-start)
                    (scan-position right-position))
                (loop while (and (< scan-position
                                     (integer-interval-set-count right))
@@ -317,7 +316,7 @@ The existing canonical vector is rewritten in O(n) time."
   (integer-interval--validate start end)
   (when (= start end)
     (return-from integer-interval-map-set map))
-  (let ((result (make-array 0 :adjustable t :fill-pointer 0))
+  (let ((result     (make-array 0 :adjustable t :fill-pointer 0))
         (inserted-p nil))
     (loop for entry across (integer-interval-map-entries map)
           for entry-start = (integer-interval-entry-start entry)
@@ -460,7 +459,7 @@ INTERVAL must not start before the last interval. Return INTERVALS."
 
 (defun integer-interval-set--candidate-position (set point)
   "Return the position of the last interval in SET starting at or before POINT, or NIL."
-  (let ((low 0)
+  (let ((low  0)
         (high (integer-interval-set-count set)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -475,7 +474,7 @@ INTERVAL must not start before the last interval. Return INTERVALS."
 
 (defun integer-interval-set--first-ending-after (set point)
   "Return the position of the first interval in SET ending after POINT, or SET's count."
-  (let ((low 0)
+  (let ((low  0)
         (high (integer-interval-set-count set)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -489,7 +488,7 @@ INTERVAL must not start before the last interval. Return INTERVALS."
 
 (defun integer-interval-map--candidate-position (map point)
   "Return the position of the last entry in MAP starting at or before POINT, or NIL."
-  (let ((low 0)
+  (let ((low  0)
         (high (integer-interval-map-count map)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -504,7 +503,7 @@ INTERVAL must not start before the last interval. Return INTERVALS."
 
 (defun integer-interval-map--first-ending-after (map point)
   "Return the position of the first entry in MAP ending after POINT, or MAP's count."
-  (let ((low 0)
+  (let ((low  0)
         (high (integer-interval-map-count map)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)

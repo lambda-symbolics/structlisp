@@ -1,19 +1,18 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition priority-queue-error (error)
   ((queue
-    :initarg :queue
-    :reader priority-queue-error-queue
+    :initarg       :queue
+    :reader        priority-queue-error-queue
     :documentation "The priority queue involved in the error."))
   (:documentation "Base condition for priority queue failures."))
 
 (define-condition priority-queue-duplicate-key (priority-queue-error)
   ((key
-    :initarg :key
-    :reader priority-queue-duplicate-key-key
+    :initarg       :key
+    :reader        priority-queue-duplicate-key-key
     :documentation "The duplicate key."))
   (:report
    (lambda (condition stream)
@@ -70,7 +69,7 @@ the standard hash-table tests."
 
 When KEY is supplied, or QUEUE has a key function, the entry may later be
 cancelled or reprioritized in O(log n). Indexed keys must be unique."
-  (let* ((indexed-p (or key-supplied-p (priority-queue-key-function queue)))
+  (let* ((indexed-p     (or key-supplied-p (priority-queue-key-function queue)))
          (effective-key (if key-supplied-p
                             key
                             (when (priority-queue-key-function queue)
@@ -80,16 +79,16 @@ cancelled or reprioritized in O(log n). Indexed keys must be unique."
                                      (priority-queue-key-index queue))))
       (error 'priority-queue-duplicate-key
              :queue queue
-             :key effective-key))
+             :key   effective-key))
     (let* ((storage (priority-queue-storage queue))
-           (index (length storage))
-           (entry (priority-queue--make-entry
-                   :item      item
-                   :priority  priority
-                   :key       effective-key
-                   :indexed-p (not (null indexed-p))
-                   :sequence  (priority-queue-next-sequence queue)
-                   :index     index)))
+           (index   (length storage))
+           (entry   (priority-queue--make-entry
+                     :item      item
+                     :priority  priority
+                     :key       effective-key
+                     :indexed-p (not (null indexed-p))
+                     :sequence  (priority-queue-next-sequence queue)
+                     :index     index)))
       (incf (priority-queue-next-sequence queue))
       (vector-push-extend entry storage)
       (when indexed-p
@@ -179,9 +178,9 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
   (check-type lessp (or function symbol))
   (when (zerop count)
     (return-from top-k #()))
-  (let ((key-function (coerce key 'function))
-        (less-function (coerce lessp 'function))
-        (heap (make-array 0 :adjustable t :fill-pointer 0))
+  (let ((key-function    (coerce key 'function))
+        (less-function   (coerce lessp 'function))
+        (heap            (make-array 0 :adjustable t :fill-pointer 0))
         (sequence-number 0))
     (map nil
          (lambda (item)
@@ -214,8 +213,8 @@ uses O(COUNT) storage and O(n log COUNT) comparisons. Ties retain input order."
 
 A better priority under QUEUE's LESSP comes first, and equal priorities leave in
 insertion order."
-  (let* ((lessp (priority-queue-lessp queue))
-         (left-priority (priority-queue-entry-priority left))
+  (let* ((lessp          (priority-queue-lessp queue))
+         (left-priority  (priority-queue-entry-priority left))
          (right-priority (priority-queue-entry-priority right)))
     (or (funcall lessp left-priority right-priority)
         (and (not (funcall lessp right-priority left-priority))
@@ -225,8 +224,8 @@ insertion order."
 (defun priority-queue--swap (queue left-index right-index)
   "Swap QUEUE's entries at LEFT-INDEX and RIGHT-INDEX and update their recorded indices."
   (let* ((storage (priority-queue-storage queue))
-         (left (aref storage left-index))
-         (right (aref storage right-index)))
+         (left    (aref storage left-index))
+         (right   (aref storage right-index)))
     (rotatef (aref storage left-index) (aref storage right-index))
     (setf (priority-queue-entry-index left) right-index
           (priority-queue-entry-index right) left-index)))
@@ -252,9 +251,9 @@ Return the entry's final index."
   (let ((storage (priority-queue-storage queue)))
     (loop
       (let* ((count (length storage))
-             (left (+ (* 2 index) 1))
+             (left  (+ (* 2 index) 1))
              (right (1+ left))
-             (best index))
+             (best  index))
         (when (and (< left count)
                    (priority-queue--entry-before-p
                     queue (aref storage left) (aref storage best)))
@@ -272,9 +271,9 @@ Return the entry's final index."
   "Remove QUEUE's entry at heap INDEX and restore the heap order.
 
 Return the removed item, priority, key, and true."
-  (let* ((storage (priority-queue-storage queue))
+  (let* ((storage    (priority-queue-storage queue))
          (last-index (1- (length storage)))
-         (removed (aref storage index)))
+         (removed    (aref storage index)))
     (when (priority-queue-entry-indexed-p removed)
       (remhash (priority-queue-entry-key removed)
                (priority-queue-key-index queue)))
@@ -303,7 +302,7 @@ Return the removed item, priority, key, and true."
 
 Each candidate is a vector of item, priority, and input position. A better
 priority under LESSP ranks first, and equal priorities rank in input order."
-  (let ((left-priority (aref left 1))
+  (let ((left-priority  (aref left 1))
         (right-priority (aref right 1)))
     (or (funcall lessp left-priority right-priority)
         (and (not (funcall lessp right-priority left-priority))
@@ -333,7 +332,7 @@ The root of HEAP holds the worst kept candidate."
 The root of HEAP holds the worst kept candidate."
   (loop
     (let* ((count (length heap))
-           (left (+ (* 2 index) 1))
+           (left  (+ (* 2 index) 1))
            (right (1+ left))
            (worst index))
       (when (and (< left count)

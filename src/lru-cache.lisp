@@ -1,27 +1,26 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition lru-cache-error (error)
   ((cache
-    :initarg :cache
-    :reader lru-cache-error-cache
+    :initarg       :cache
+    :reader        lru-cache-error-cache
     :documentation "The cache involved in the error."))
   (:documentation "Base condition for LRU cache failures."))
 
 (define-condition lru-cache-weight-error (lru-cache-error)
   ((key
-    :initarg :key
-    :reader lru-cache-weight-error-key
+    :initarg       :key
+    :reader        lru-cache-weight-error-key
     :documentation "The key whose entry weight was invalid.")
    (value
-    :initarg :value
-    :reader lru-cache-weight-error-value
+    :initarg       :value
+    :reader        lru-cache-weight-error-value
     :documentation "The value whose entry weight was invalid.")
    (weight
-    :initarg :weight
-    :reader lru-cache-weight-error-weight
+    :initarg       :weight
+    :reader        lru-cache-weight-error-weight
     :documentation "The invalid weight."))
   (:report
    (lambda (condition stream)
@@ -172,7 +171,7 @@ entry whose own weight exceeds the budget is inserted and immediately evicted."
 
 Traversal uses a key/value snapshot taken before the first call. Mutating CACHE
 from FUNCTION does not alter which entries are visited or their values."
-  (let ((entries (make-array (lru-cache-count cache)))
+  (let ((entries  (make-array (lru-cache-count cache)))
         (position 0))
     (loop for node = (lru-cache-first-node cache)
                     then (lru-cache-node-next node)
@@ -187,7 +186,7 @@ from FUNCTION does not alter which entries are visited or their values."
 
 (defun lru-cache-keys (cache)
   "Return a fresh vector of keys from least to most recent."
-  (let ((keys (make-array (lru-cache-count cache)))
+  (let ((keys     (make-array (lru-cache-count cache)))
         (position 0))
     (lru-cache-map
      (lambda (key value)
@@ -255,16 +254,16 @@ Signal LRU-CACHE-WEIGHT-ERROR unless the weight is a non-negative integer."
                     0)))
     (unless (typep weight '(integer 0 *))
       (error 'lru-cache-weight-error
-             :cache cache
-             :key key
-             :value value
+             :cache  cache
+             :key    key
+             :value  value
              :weight weight))
     weight))
 
 (defun lru-cache--unlink-node (cache node)
   "Detach NODE from CACHE's recency list and return NODE."
   (let ((previous (lru-cache-node-previous node))
-        (next (lru-cache-node-next node)))
+        (next     (lru-cache-node-next node)))
     (if previous
         (setf (lru-cache-node-next previous) next)
         (setf (lru-cache-first-node cache) next))

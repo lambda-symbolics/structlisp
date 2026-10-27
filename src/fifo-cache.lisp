@@ -1,27 +1,26 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition fifo-cache-error (error)
   ((cache
-    :initarg :cache
-    :reader fifo-cache-error-cache
+    :initarg       :cache
+    :reader        fifo-cache-error-cache
     :documentation "The cache involved in the error."))
   (:documentation "Base condition for FIFO cache failures."))
 
 (define-condition fifo-cache-weight-error (fifo-cache-error)
   ((key
-    :initarg :key
-    :reader fifo-cache-weight-error-key
+    :initarg       :key
+    :reader        fifo-cache-weight-error-key
     :documentation "The key whose entry weight was invalid.")
    (value
-    :initarg :value
-    :reader fifo-cache-weight-error-value
+    :initarg       :value
+    :reader        fifo-cache-weight-error-value
     :documentation "The value whose entry weight was invalid.")
    (weight
-    :initarg :weight
-    :reader fifo-cache-weight-error-weight
+    :initarg       :weight
+    :reader        fifo-cache-weight-error-weight
     :documentation "The invalid weight."))
   (:report
    (lambda (condition stream)
@@ -33,12 +32,12 @@
 
 (define-condition fifo-cache-callback-mutation-error (fifo-cache-error)
   ((callback
-    :initarg :callback
-    :reader fifo-cache-callback-mutation-error-callback
+    :initarg       :callback
+    :reader        fifo-cache-callback-mutation-error-callback
     :documentation "The callback kind active when mutation was attempted.")
    (operation
-    :initarg :operation
-    :reader fifo-cache-callback-mutation-error-operation
+    :initarg       :operation
+    :reader        fifo-cache-callback-mutation-error-operation
     :documentation "The attempted mutating operation."))
   (:report
    (lambda (condition stream)
@@ -49,12 +48,12 @@
 
 (define-condition fifo-cache-eviction-callback-error (fifo-cache-error)
   ((evicted-entries
-    :initarg :evicted-entries
-    :reader fifo-cache-eviction-callback-error-evicted-entries
+    :initarg       :evicted-entries
+    :reader        fifo-cache-eviction-callback-error-evicted-entries
     :documentation "All key/value entries removed before callback delivery.")
    (failures
-    :initarg :failures
-    :reader fifo-cache-eviction-callback-error-failures
+    :initarg       :failures
+    :reader        fifo-cache-eviction-callback-error-failures
     :documentation "Callback failure records in eviction order."))
   (:report
    (lambda (condition stream)
@@ -312,7 +311,7 @@ values."
 
 (defun fifo-cache-keys (cache)
   "Return a fresh vector of CACHE's keys from oldest to newest."
-  (let ((keys (make-array (fifo-cache-count cache)))
+  (let ((keys     (make-array (fifo-cache-count cache)))
         (position 0))
     (fifo-cache-map
      (lambda (key value)
@@ -324,7 +323,7 @@ values."
 
 (defun fifo-cache-values (cache)
   "Return a fresh vector of CACHE's values from oldest to newest."
-  (let ((values (make-array (fifo-cache-count cache)))
+  (let ((values   (make-array (fifo-cache-count cache)))
         (position 0))
     (fifo-cache-map
      (lambda (key value)
@@ -359,8 +358,8 @@ values."
 OPERATION names the attempted mutation for the report."
   (when (fifo-cache--slot-active-callback cache)
     (error 'fifo-cache-callback-mutation-error
-           :cache cache
-           :callback (fifo-cache--slot-active-callback cache)
+           :cache     cache
+           :callback  (fifo-cache--slot-active-callback cache)
            :operation operation))
   cache)
 
@@ -390,9 +389,9 @@ Signal FIFO-CACHE-WEIGHT-ERROR unless the weight is a non-negative integer."
               0)))
     (unless (typep weight '(integer 0 *))
       (error 'fifo-cache-weight-error
-             :cache cache
-             :key key
-             :value value
+             :cache  cache
+             :key    key
+             :value  value
              :weight weight))
     weight))
 
@@ -442,7 +441,7 @@ FIFO-CACHE-EVICTION-CALLBACK-ERROR with every evicted entry and failure."
                       failures))))
         (unless (zerop (length failures))
           (error 'fifo-cache-eviction-callback-error
-                 :cache cache
+                 :cache           cache
                  :evicted-entries (coerce evicted 'simple-vector)
-                 :failures (coerce failures 'simple-vector)))))
+                 :failures        (coerce failures 'simple-vector)))))
     (coerce evicted 'simple-vector)))

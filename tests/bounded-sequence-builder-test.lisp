@@ -1,6 +1,5 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Budgets and Append Semantics --
 
 (define-test test-bounded-sequence-builder-count-budgets
@@ -123,7 +122,7 @@
 
 (define-test test-bounded-sequence-builder-range-snapshots
   (let* ((source (vector "a" "bb"))
-         (calls 0)
+         (calls  0)
          (builder
            (make-bounded-sequence-builder
             2
@@ -139,11 +138,11 @@
                 (bounded-sequence-builder-snapshot builder))
     (test-equal 3 (bounded-sequence-builder-total-weight builder)))
   (let* ((source (vector #\a #\b))
-         (calls 0)
+         (calls  0)
          (builder
            (make-bounded-sequence-builder
             2
-            :element-type 'character
+            :element-type   'character
             :maximum-weight 0
             :weight-function
             (lambda (element)
@@ -155,7 +154,7 @@
     (test-equal "ab" (bounded-sequence-builder-snapshot builder))
     (test-equal 0 (bounded-sequence-builder-total-weight builder)))
   (let* ((source (vector "a" "bb" "ccc"))
-         (calls 0)
+         (calls  0)
          (builder
            (make-bounded-sequence-builder
             3
@@ -251,8 +250,8 @@
 (define-test test-bounded-sequence-builder-element-types
   (let ((characters (make-bounded-sequence-builder
                      5 :element-type 'character :initial-capacity 0))
-        (octets (make-bounded-sequence-builder
-                 4 :element-type '(unsigned-byte 8) :initial-capacity 1)))
+        (octets     (make-bounded-sequence-builder
+                     4 :element-type '(unsigned-byte 8) :initial-capacity 1)))
     (bounded-sequence-builder-append-sequence characters "abc")
     (bounded-sequence-builder-append characters #\d)
     (test-equal "abcd" (bounded-sequence-builder-snapshot characters))
@@ -279,8 +278,8 @@
 (define-test test-bounded-sequence-builder-typed-finish
   (let ((characters (make-bounded-sequence-builder
                      3 :element-type 'character))
-        (octets (make-bounded-sequence-builder
-                 3 :element-type '(unsigned-byte 8))))
+        (octets     (make-bounded-sequence-builder
+                     3 :element-type '(unsigned-byte 8))))
     (bounded-sequence-builder-append-sequence characters "abc")
     (bounded-sequence-builder-append-sequence octets #(1 2 3))
     (let ((string (bounded-sequence-builder-finish characters))
@@ -298,10 +297,10 @@
 (define-test test-bounded-sequence-builder-adjustment-and-reset
   (let ((builder (make-bounded-sequence-builder
                   10 :initial-capacity 20
-                  :maximum-weight 20
-                  :weight-function (lambda (element)
-                                     (declare (ignore element))
-                                     2))))
+                  :maximum-weight      20
+                  :weight-function     (lambda (element)
+                                         (declare (ignore element))
+                                         2))))
     (test-equal 10 (bounded-sequence-builder-capacity builder))
     (bounded-sequence-builder-clear builder)
     (let ((growing (make-bounded-sequence-builder 10 :initial-capacity 0)))
@@ -344,7 +343,7 @@
       (test-equal #(a changed c d) finished))))
 
 (define-test test-bounded-sequence-builder-clear-detaches-storage
-  (let* ((value (list 'retained-only-by-old-storage))
+  (let* ((value   (list 'retained-only-by-old-storage))
          (builder (make-bounded-sequence-builder 4))
          (storage nil))
     (bounded-sequence-builder-append builder value)
@@ -356,7 +355,7 @@
     (test-equal #() (bounded-sequence-builder-snapshot builder))))
 
 (define-test test-bounded-sequence-builder-reentrant-weight-callback
-  (let ((builder nil)
+  (let ((builder            nil)
         (attempt-mutation-p t))
     (setf builder
           (make-bounded-sequence-builder
@@ -414,8 +413,8 @@
 (define-test test-bounded-sequence-builder-invalid-weights-and-ranges
   (let ((builder (make-bounded-sequence-builder
                   3 :maximum-weight 4
-                  :weight-function (lambda (element)
-                                     (if (eq element 'bad) -1 1)))))
+                  :weight-function  (lambda (element)
+                                      (if (eq element 'bad) -1 1)))))
     (bounded-sequence-builder-append builder 'good)
     (handler-case
         (progn

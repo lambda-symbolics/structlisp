@@ -1,23 +1,22 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition monotone-integer-index-error (error)
   ((index
-    :initarg :index
-    :reader monotone-integer-index-error-index
+    :initarg       :index
+    :reader        monotone-integer-index-error-index
     :documentation "The monotone index involved in the error."))
   (:documentation "Base condition for monotone integer index failures."))
 
 (define-condition monotone-integer-index-order-error (monotone-integer-index-error)
   ((value
-    :initarg :value
-    :reader monotone-integer-index-order-error-value
+    :initarg       :value
+    :reader        monotone-integer-index-order-error-value
     :documentation "The rejected value.")
    (last-value
-    :initarg :last-value
-    :reader monotone-integer-index-order-error-last-value
+    :initarg       :last-value
+    :reader        monotone-integer-index-order-error-last-value
     :documentation "The current final value."))
   (:report
    (lambda (condition stream)
@@ -28,12 +27,12 @@
 
 (define-condition monotone-integer-index-value-error (monotone-integer-index-error)
   ((value
-    :initarg :value
-    :reader monotone-integer-index-value-error-value
+    :initarg       :value
+    :reader        monotone-integer-index-value-error-value
     :documentation "The out-of-range value.")
    (maximum
-    :initarg :maximum
-    :reader monotone-integer-index-value-error-maximum
+    :initarg       :maximum
+    :reader        monotone-integer-index-value-error-maximum
     :documentation "The largest accepted value."))
   (:report
    (lambda (condition stream)
@@ -50,7 +49,7 @@
   "A compact nondecreasing integer vector with binary-search queries."
   (values (make-array 0
                       :element-type '(unsigned-byte 32)
-                      :adjustable t
+                      :adjustable   t
                       :fill-pointer 0)
           :type vector)
   (maximum-value (1- (ash 1 32)) :type (integer 0 *)))
@@ -65,12 +64,12 @@ decrease. Binary-search operations are O(log n)."
   (check-type element-bits (member 8 16 32 64))
   (check-type initial-capacity (integer 0 *))
   (let* ((maximum-value (1- (ash 1 element-bits)))
-         (index (monotone-integer-index--make
-                 :values (make-array initial-capacity
-                                     :element-type `(unsigned-byte ,element-bits)
-                                     :adjustable t
-                                     :fill-pointer 0)
-                 :maximum-value maximum-value)))
+         (index         (monotone-integer-index--make
+                         :values        (make-array initial-capacity
+                                                    :element-type `(unsigned-byte ,element-bits)
+                                                    :adjustable   t
+                                                    :fill-pointer 0)
+                         :maximum-value maximum-value)))
     (map nil (lambda (value)
                (monotone-integer-index-append index value))
          initial-contents)
@@ -99,15 +98,15 @@ value. Duplicate values are allowed."
                        index (1- (monotone-integer-index-count index)))))
       (when (< value last-value)
         (error 'monotone-integer-index-order-error
-               :index index
-               :value value
+               :index      index
+               :value      value
                :last-value last-value))))
   (vector-push-extend value (monotone-integer-index-values index))
   (1- (monotone-integer-index-count index)))
 
 (defun monotone-integer-index-lower-bound (index value)
   "Return the first position whose value is not less than VALUE."
-  (let ((low 0)
+  (let ((low  0)
         (high (monotone-integer-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -119,7 +118,7 @@ value. Duplicate values are allowed."
 
 (defun monotone-integer-index-upper-bound (index value)
   "Return the first position whose value is greater than VALUE."
-  (let ((low 0)
+  (let ((low  0)
         (high (monotone-integer-index-count index)))
     (loop while (< low high)
           for middle = (floor (+ low high) 2)
@@ -189,6 +188,6 @@ Return NIL, NIL, and NIL when no indexed value is below VALUE."
   (unless (and (integerp value)
                (<= 0 value (monotone-integer-index-maximum-value index)))
     (error 'monotone-integer-index-value-error
-           :index index
-           :value value
+           :index   index
+           :value   value
            :maximum (monotone-integer-index-maximum-value index))))

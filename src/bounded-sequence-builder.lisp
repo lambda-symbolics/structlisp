@@ -1,28 +1,27 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Conditions --
 
 (define-condition bounded-sequence-builder-overflow (error)
   ((builder
-    :initarg :builder
-    :reader bounded-sequence-builder-overflow-builder
+    :initarg       :builder
+    :reader        bounded-sequence-builder-overflow-builder
     :documentation "The builder that could not accept the requested elements.")
    (requested-count
-    :initarg :requested-count
-    :reader bounded-sequence-builder-overflow-requested-count
+    :initarg       :requested-count
+    :reader        bounded-sequence-builder-overflow-requested-count
     :documentation "The number of elements requested by the append operation.")
    (requested-weight
-    :initarg :requested-weight
-    :reader bounded-sequence-builder-overflow-requested-weight
+    :initarg       :requested-weight
+    :reader        bounded-sequence-builder-overflow-requested-weight
     :documentation "The total weight requested by the append operation.")
    (remaining-capacity
-    :initarg :remaining-capacity
-    :reader bounded-sequence-builder-overflow-remaining-capacity
+    :initarg       :remaining-capacity
+    :reader        bounded-sequence-builder-overflow-remaining-capacity
     :documentation "The element capacity remaining before the append.")
    (remaining-weight
-    :initarg :remaining-weight
-    :reader bounded-sequence-builder-overflow-remaining-weight
+    :initarg       :remaining-weight
+    :reader        bounded-sequence-builder-overflow-remaining-weight
     :documentation "The weight capacity remaining before the append, or NIL."))
   (:report
    (lambda (condition stream)
@@ -36,16 +35,16 @@
 
 (define-condition bounded-sequence-builder-weight-error (error)
   ((builder
-    :initarg :builder
-    :reader bounded-sequence-builder-weight-error-builder
+    :initarg       :builder
+    :reader        bounded-sequence-builder-weight-error-builder
     :documentation "The builder whose weight function returned an invalid value.")
    (element
-    :initarg :element
-    :reader bounded-sequence-builder-weight-error-element
+    :initarg       :element
+    :reader        bounded-sequence-builder-weight-error-element
     :documentation "The element whose weight was invalid.")
    (weight
-    :initarg :weight
-    :reader bounded-sequence-builder-weight-error-weight
+    :initarg       :weight
+    :reader        bounded-sequence-builder-weight-error-weight
     :documentation "The invalid weight value."))
   (:report
    (lambda (condition stream)
@@ -56,12 +55,12 @@
 
 (define-condition bounded-sequence-builder-callback-mutation-error (error)
   ((builder
-    :initarg :builder
-    :reader bounded-sequence-builder-callback-mutation-error-builder
+    :initarg       :builder
+    :reader        bounded-sequence-builder-callback-mutation-error-builder
     :documentation "The builder whose callback attempted mutation.")
    (operation
-    :initarg :operation
-    :reader bounded-sequence-builder-callback-mutation-error-operation
+    :initarg       :operation
+    :reader        bounded-sequence-builder-callback-mutation-error-operation
     :documentation "The attempted mutating operation."))
   (:report
    (lambda (condition stream)
@@ -141,7 +140,7 @@ for each element when MAXIMUM-WEIGHT is supplied."
     (%make-bounded-sequence-builder
      :storage         (make-array capacity
                                   :element-type element-type
-                                  :adjustable t
+                                  :adjustable   t
                                   :fill-pointer 0)
      :maximum-count   maximum-count
      :maximum-weight  maximum-weight
@@ -195,7 +194,6 @@ BOUNDED-SEQUENCE-BUILDER-FINISH resets the builder."
 (defun bounded-sequence-builder-capacity (builder)
   "Return BUILDER's current internal allocation capacity."
   (array-total-size (%bounded-sequence-builder-storage builder)))
-
 
 (defun bounded-sequence-builder-append (builder element)
   "Append ELEMENT to BUILDER and return BUILDER.
@@ -283,7 +281,7 @@ signals BOUNDED-SEQUENCE-BUILDER-OVERFLOW."
 
 The vector uses BUILDER's upgraded element type and shares no storage with the
 builder. Elements themselves are not copied."
-  (let* ((count (bounded-sequence-builder-count builder))
+  (let* ((count    (bounded-sequence-builder-count builder))
          (snapshot (make-array count
                                :element-type
                                (bounded-sequence-builder-element-type
@@ -312,7 +310,7 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
           (make-array capacity
                       :element-type
                       (%bounded-sequence-builder-element-type builder)
-                      :adjustable t
+                      :adjustable   t
                       :fill-pointer 0)
           (%bounded-sequence-builder-total-weight builder) 0
           (%bounded-sequence-builder-overflowed-p builder) nil))
@@ -327,13 +325,12 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
     (error 'bounded-sequence-builder-callback-mutation-error
            :builder builder :operation operation)))
 
-
 (defun bounded-sequence-builder--range-snapshot (sequence start end)
   "Validate and detach a sequence range, returning its snapshot and length."
   (check-type start (integer 0 *))
   (check-type end (or null (integer 0 *)))
   (let* ((length (length sequence))
-         (end (or end length)))
+         (end    (or end length)))
     (unless (<= start end length)
       (error 'bounded-sequence-builder-range-error
              :start         start
@@ -393,9 +390,9 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
   "Mark BUILDER overflowed and signal an exact append failure."
   (setf (%bounded-sequence-builder-overflowed-p builder) t)
   (error 'bounded-sequence-builder-overflow
-         :builder            builder
-         :requested-count    count
-         :requested-weight   weight
+         :builder          builder
+         :requested-count  count
+         :requested-weight weight
          :remaining-capacity
          (bounded-sequence-builder-remaining-capacity builder)
          :remaining-weight
@@ -403,7 +400,7 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
 
 (defun bounded-sequence-builder--ensure-capacity (builder required-count)
   "Grow BUILDER's storage to REQUIRED-COUNT without exceeding its count limit."
-  (let* ((storage (%bounded-sequence-builder-storage builder))
+  (let* ((storage  (%bounded-sequence-builder-storage builder))
          (capacity (array-total-size storage)))
     (when (> required-count capacity)
       (let ((new-capacity
@@ -424,7 +421,7 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
 (defun bounded-sequence-builder--append-range
     (builder sequence weight &key (end (length sequence)))
   "Append the first END elements of SEQUENCE, validated and known to fit, of total WEIGHT."
-  (let* ((count end)
+  (let* ((count     end)
          (old-count (bounded-sequence-builder-count builder))
          (new-count (+ old-count count)))
     (bounded-sequence-builder--ensure-capacity builder new-count)

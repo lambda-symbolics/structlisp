@@ -1,6 +1,5 @@
 (in-package #:structlisp)
 
-
 ;;;; -- Ordered map --
 
 (defstruct (ordered-map-node
@@ -200,7 +199,7 @@ Return NIL and NIL when KEY is absent."
 
 Traversal uses a key/value snapshot taken before the first call. Mutating MAP
 from FUNCTION does not alter which entries are visited or their values."
-  (let ((entries (make-array (ordered-map-count map)))
+  (let ((entries  (make-array (ordered-map-count map)))
         (position 0))
     (loop for node = (ordered-map-first-node map)
                     then (ordered-map-node-next node)
@@ -215,7 +214,7 @@ from FUNCTION does not alter which entries are visited or their values."
 
 (defun ordered-map-keys (map)
   "Return a fresh vector of MAP's keys in order."
-  (let ((keys (make-array (ordered-map-count map)))
+  (let ((keys     (make-array (ordered-map-count map)))
         (position 0))
     (ordered-map-map
      (lambda (key value)
@@ -227,7 +226,7 @@ from FUNCTION does not alter which entries are visited or their values."
 
 (defun ordered-map-values (map)
   "Return a fresh vector of MAP's values in order."
-  (let ((values (make-array (ordered-map-count map)))
+  (let ((values   (make-array (ordered-map-count map)))
         (position 0))
     (ordered-map-map
      (lambda (key value)
@@ -259,7 +258,7 @@ from FUNCTION does not alter which entries are visited or their values."
 (defun ordered-map--unlink-node (map node)
   "Detach NODE from MAP's insertion-order list and return NODE."
   (let ((previous (ordered-map-node-previous node))
-        (next (ordered-map-node-next node)))
+        (next     (ordered-map-node-next node)))
     (if previous
         (setf (ordered-map-node-next previous) next)
         (setf (ordered-map-first-node map) next))
