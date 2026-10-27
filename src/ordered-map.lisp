@@ -257,6 +257,7 @@ from FUNCTION does not alter which entries are visited or their values."
 ;;;; -- Internal mechanics --
 
 (defun ordered-map--unlink-node (map node)
+  "Detach NODE from MAP's insertion-order list and return NODE."
   (let ((previous (ordered-map-node-previous node))
         (next (ordered-map-node-next node)))
     (if previous
