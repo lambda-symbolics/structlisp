@@ -26,6 +26,7 @@
 
 (defstruct (priority-queue-entry
             (:constructor priority-queue--make-entry))
+  "One queued item with its priority, optional key, insertion sequence, and heap index."
   item
   priority
   key

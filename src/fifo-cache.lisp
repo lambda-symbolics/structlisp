@@ -79,6 +79,7 @@
 
 (defstruct (fifo-cache-entry
             (:constructor fifo-cache--make-entry))
+  "One FIFO cache value and its cached weight."
   value
   (weight 0 :type (integer 0 *)))
 

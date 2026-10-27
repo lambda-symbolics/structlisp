@@ -5,6 +5,7 @@
 
 (defstruct (ordered-map-node
             (:constructor ordered-map--make-node))
+  "One ordered map entry, linked to its neighbors in insertion order."
   key
   value
   previous

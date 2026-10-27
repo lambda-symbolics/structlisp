@@ -36,6 +36,7 @@
 
 (defstruct (lru-cache-node
             (:constructor lru-cache--make-node))
+  "One LRU cache entry, linked to its neighbors in recency order."
   key
   value
   (weight 0 :type (integer 0 *))
