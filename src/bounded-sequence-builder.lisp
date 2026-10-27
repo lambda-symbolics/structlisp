@@ -234,13 +234,11 @@ overflowed, and return NIL without signaling BOUNDED-SEQUENCE-BUILDER-OVERFLOW."
    builder 'bounded-sequence-builder-try-append-sequence)
   (multiple-value-bind (snapshot count)
       (bounded-sequence-builder--range-snapshot sequence start end)
-    (let ((weight (bounded-sequence-builder--range-weight
-                   builder snapshot 0 count)))
+    (let ((weight (bounded-sequence-builder--range-weight builder snapshot)))
       (unless (bounded-sequence-builder--fits-p builder count weight)
         (setf (%bounded-sequence-builder-overflowed-p builder) t)
         (return-from bounded-sequence-builder-try-append-sequence nil))
-      (bounded-sequence-builder--append-range
-       builder snapshot 0 count weight)
+      (bounded-sequence-builder--append-range builder snapshot weight)
       t)))
 
 (defun bounded-sequence-builder-append-sequence (builder sequence
@@ -254,12 +252,10 @@ BOUNDED-SEQUENCE-BUILDER-OVERFLOW without changing accumulated contents."
    builder 'bounded-sequence-builder-append-sequence)
   (multiple-value-bind (snapshot count)
       (bounded-sequence-builder--range-snapshot sequence start end)
-    (let ((weight (bounded-sequence-builder--range-weight
-                   builder snapshot 0 count)))
+    (let ((weight (bounded-sequence-builder--range-weight builder snapshot)))
       (unless (bounded-sequence-builder--fits-p builder count weight)
         (bounded-sequence-builder--signal-overflow builder count weight))
-      (bounded-sequence-builder--append-range
-       builder snapshot 0 count weight)
+      (bounded-sequence-builder--append-range builder snapshot weight)
       count)))
 
 (defun bounded-sequence-builder-append-sequence-truncating
@@ -274,10 +270,10 @@ signals BOUNDED-SEQUENCE-BUILDER-OVERFLOW."
   (multiple-value-bind (snapshot count)
       (bounded-sequence-builder--range-snapshot sequence start end)
     (multiple-value-bind (append-end weight)
-        (bounded-sequence-builder--fitting-range-end builder snapshot 0 count)
+        (bounded-sequence-builder--fitting-range-end builder snapshot)
       (let ((complete-p (= append-end count)))
-        (bounded-sequence-builder--append-range
-         builder snapshot 0 append-end weight)
+        (bounded-sequence-builder--append-range builder snapshot weight
+                                                :end append-end)
         (unless complete-p
           (setf (%bounded-sequence-builder-overflowed-p builder) t))
         (values append-end complete-p)))))
@@ -379,9 +375,9 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
              :builder builder :element element :weight weight))
     weight))
 
-(defun bounded-sequence-builder--range-weight (builder sequence start end)
-  "Validate a sequence range and return its total weight."
-  (loop for index from start below end
+(defun bounded-sequence-builder--range-weight (builder sequence)
+  "Validate SEQUENCE's elements for BUILDER and return their total weight."
+  (loop for index below (length sequence)
         sum (bounded-sequence-builder--element-weight
              builder (elt sequence index))))
 
@@ -426,9 +422,9 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
   (incf (%bounded-sequence-builder-total-weight builder) weight))
 
 (defun bounded-sequence-builder--append-range
-    (builder sequence start end weight)
-  "Append a validated, known-to-fit sequence range of total WEIGHT."
-  (let* ((count (- end start))
+    (builder sequence weight &key (end (length sequence)))
+  "Append the first END elements of SEQUENCE, validated and known to fit, of total WEIGHT."
+  (let* ((count end)
          (old-count (bounded-sequence-builder-count builder))
          (new-count (+ old-count count)))
     (bounded-sequence-builder--ensure-capacity builder new-count)
@@ -439,17 +435,16 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
             (replace storage sequence
                      :start1 old-count
                      :end1   new-count
-                     :start2 start
                      :end2   end))
         (error (condition)
           (setf (fill-pointer storage) old-count)
           (error condition))))
     (incf (%bounded-sequence-builder-total-weight builder) weight)))
 
-(defun bounded-sequence-builder--fitting-range-end
-    (builder sequence start end)
-  "Return the exclusive end and weight of the longest fitting sequence prefix."
-  (loop with index = start
+(defun bounded-sequence-builder--fitting-range-end (builder sequence)
+  "Return the exclusive end and weight of the longest prefix of SEQUENCE that fits BUILDER."
+  (loop with index = 0
+        with end = (length sequence)
         with count-limit = (bounded-sequence-builder-remaining-capacity builder)
         with weight-limit = (bounded-sequence-builder-remaining-weight builder)
         with count = 0
