@@ -407,8 +407,12 @@ before PREDICATE. Return NIL and NIL when no element matches."
 KEY is applied to each deque element before comparison. TEST and TEST-NOT have
 the same complementary semantics as their Common Lisp sequence counterparts
 and may not both be supplied. Return NIL and NIL when no element matches."
-  (deque--position item deque key test test-supplied-p
-                   test-not test-not-supplied-p))
+  (deque--position item deque
+                   :key                 key
+                   :test                test
+                   :test-supplied-p     test-supplied-p
+                   :test-not            test-not
+                   :test-not-supplied-p test-not-supplied-p))
 
 (defun deque-find (item deque &key (key #'identity)
                                    (test #'eql test-supplied-p)
@@ -418,8 +422,12 @@ and may not both be supplied. Return NIL and NIL when no element matches."
 KEY, TEST, and TEST-NOT follow DEQUE-POSITION semantics. The presence value
 distinguishes a stored NIL element from absence."
   (multiple-value-bind (index present-p)
-      (deque--position item deque key test test-supplied-p
-                       test-not test-not-supplied-p)
+      (deque--position item deque
+                       :key                 key
+                       :test                test
+                       :test-supplied-p     test-supplied-p
+                       :test-not            test-not
+                       :test-not-supplied-p test-not-supplied-p)
     (if present-p
         (values (deque-ref deque index) t)
         (values nil nil))))
@@ -432,8 +440,12 @@ distinguishes a stored NIL element from absence."
 KEY, TEST, and TEST-NOT follow DEQUE-POSITION semantics. Removal uses indexed
 shifting and maintains DEQUE's cached weight. Return NIL and NIL if absent."
   (multiple-value-bind (index present-p)
-      (deque--position item deque key test test-supplied-p
-                       test-not test-not-supplied-p)
+      (deque--position item deque
+                       :key                 key
+                       :test                test
+                       :test-supplied-p     test-supplied-p
+                       :test-not            test-not
+                       :test-not-supplied-p test-not-supplied-p)
     (if present-p
         (values (deque-remove-at deque index) t)
         (values nil nil))))
@@ -573,8 +585,7 @@ is a no-op and does not call KEY."
              :maximum maximum))))
 
 
-(defun deque--position (item deque key test test-supplied-p
-                        test-not test-not-supplied-p)
+(defun deque--position (item deque &key key test test-supplied-p test-not test-not-supplied-p)
   (when (and test-supplied-p test-not-supplied-p)
     (error 'deque-test-conflict-error
            :deque    deque
@@ -612,7 +623,7 @@ is a no-op and does not call KEY."
       (aref (deque-weights deque) physical-index)
       0))
 
-(defun deque--store-at-physical-index (deque physical-index element weight)
+(defun deque--store-at-physical-index (deque physical-index element &key (weight 0))
   (setf (aref (deque-storage deque) physical-index) element)
   (when (deque-weights deque)
     (setf (aref (deque-weights deque) physical-index) weight)))
