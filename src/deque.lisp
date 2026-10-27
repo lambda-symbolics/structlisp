@@ -54,6 +54,27 @@
              (deque-weight-error-weight condition))))
   (:documentation "A deque weight function returned an invalid value."))
 
+(define-condition deque-weight-limit-error (deque-error)
+  ((index
+    :initarg       :index
+    :reader        deque-weight-limit-error-index
+    :documentation "The zero-based index of the rejected replacement.")
+   (total-weight
+    :initarg       :total-weight
+    :reader        deque-weight-limit-error-total-weight
+    :documentation "The total weight the deque would have after the replacement.")
+   (maximum-weight
+    :initarg       :maximum-weight
+    :reader        deque-weight-limit-error-maximum-weight
+    :documentation "The deque's weight limit."))
+  (:report
+   (lambda (condition stream)
+     (format stream "Replacing deque index ~D would raise the total weight to ~D, above the limit of ~D."
+             (deque-weight-limit-error-index condition)
+             (deque-weight-limit-error-total-weight condition)
+             (deque-weight-limit-error-maximum-weight condition))))
+  (:documentation "A replacement would raise a deque's total weight above its limit."))
+
 
 ;;;; -- Deque --
 
@@ -128,7 +149,11 @@ not evict other elements; an overweight replacement signals an error."
          (new-total (+ (- (deque-total-weight deque) old-weight) new-weight)))
     (when (and (deque-maximum-weight deque)
                (> new-total (deque-maximum-weight deque)))
-      (error "Replacing deque index ~D would exceed the maximum weight." index))
+      (error 'deque-weight-limit-error
+             :deque          deque
+             :index          index
+             :total-weight   new-total
+             :maximum-weight (deque-maximum-weight deque)))
     (setf (aref (deque-storage deque) physical-index) new-value)
     (when (deque-weights deque)
       (setf (aref (deque-weights deque) physical-index) new-weight))

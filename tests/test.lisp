@@ -82,8 +82,11 @@
     (handler-case
         (progn
           (setf (deque-ref weighted 0) "toolong")
-          (error "Expected overweight replacement failure."))
-      (error ()))
+          (error "Expected DEQUE-WEIGHT-LIMIT-ERROR."))
+      (deque-weight-limit-error (condition)
+        (test-equal 0 (deque-weight-limit-error-index condition))
+        (test-equal 9 (deque-weight-limit-error-total-weight condition))
+        (test-equal 4 (deque-weight-limit-error-maximum-weight condition))))
     (test-equal #("aa" "bb") (deque->vector weighted))))
 
 (define-test test-deque-wrap-and-shift

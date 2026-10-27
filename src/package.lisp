@@ -48,6 +48,10 @@
    #:deque-weight-error
    #:deque-weight-error-element
    #:deque-weight-error-weight
+   #:deque-weight-limit-error
+   #:deque-weight-limit-error-index
+   #:deque-weight-limit-error-total-weight
+   #:deque-weight-limit-error-maximum-weight
    ;; Bounded sequence builder
    #:bounded-sequence-builder
    #:make-bounded-sequence-builder
