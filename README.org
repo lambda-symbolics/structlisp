@@ -114,6 +114,20 @@ reports the complete evicted-entry vector and ordered failure records.
 See the exported symbols in =src/package.lisp= and their documentation strings
 for the complete API.
 
+* Development
+
+#+begin_src sh
+./script/bootstrap
+./script/check
+./script/check --fix
+#+end_src
+
+=./script/check= runs the tests, then checks the source with
+[[https://github.com/lambda-symbolics/cheque][cheque]] as =cheque.sexp=
+configures it. =--fix= skips the tests and repairs what cheque can repair.
+cheque and its tools are development dependencies: =checks/qlfile= lists them,
+and the check installs them on first use into =~/.cache/cheque/tools/=.
+
 * License
 
 Copyright 2025 Lukáš Hozda
