@@ -185,6 +185,7 @@ Return NIL, NIL, and NIL when no indexed value is below VALUE."
 ;;;; -- Internal mechanics --
 
 (defun monotone-integer-index--check-value (index value)
+  "Signal MONOTONE-INTEGER-INDEX-VALUE-ERROR unless VALUE is an integer INDEX can store."
   (unless (and (integerp value)
                (<= 0 value (monotone-integer-index-maximum-value index)))
     (error 'monotone-integer-index-value-error
