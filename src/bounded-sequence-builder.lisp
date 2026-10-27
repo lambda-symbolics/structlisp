@@ -70,6 +70,18 @@
               condition))))
   (:documentation "A weight callback attempted to mutate its builder."))
 
+(define-condition bounded-sequence-builder-element-error (type-error)
+  ((builder
+    :initarg       :builder
+    :reader        bounded-sequence-builder-element-error-builder
+    :documentation "The builder that rejected the element."))
+  (:report
+   (lambda (condition stream)
+     (format stream "Builder element ~S is not of the element type ~S."
+             (type-error-datum condition)
+             (type-error-expected-type condition))))
+  (:documentation "An append received an element outside the builder's element type."))
+
 
 ;;;; -- Builder --
 
@@ -313,10 +325,13 @@ Retain the current internal allocation capacity for reuse and return BUILDER."
     (values (subseq sequence start end) (- end start))))
 
 (defun bounded-sequence-builder--check-element (builder element)
-  "Signal TYPE-ERROR unless ELEMENT satisfies BUILDER's requested element type."
+  "Signal BOUNDED-SEQUENCE-BUILDER-ELEMENT-ERROR unless ELEMENT satisfies BUILDER's element type."
   (let ((element-type (%bounded-sequence-builder-element-type builder)))
     (unless (typep element element-type)
-      (error 'type-error :datum element :expected-type element-type))))
+      (error 'bounded-sequence-builder-element-error
+             :builder       builder
+             :datum         element
+             :expected-type element-type))))
 
 (defun bounded-sequence-builder--element-weight (builder element)
   "Validate ELEMENT and return its non-negative integer weight."

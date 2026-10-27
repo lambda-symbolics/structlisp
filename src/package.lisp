@@ -93,6 +93,8 @@
    #:bounded-sequence-builder-callback-mutation-error
    #:bounded-sequence-builder-callback-mutation-error-builder
    #:bounded-sequence-builder-callback-mutation-error-operation
+   #:bounded-sequence-builder-element-error
+   #:bounded-sequence-builder-element-error-builder
    ;; Priority queue
    #:priority-queue
    #:make-priority-queue

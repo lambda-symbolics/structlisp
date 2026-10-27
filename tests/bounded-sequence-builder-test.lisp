@@ -268,8 +268,8 @@
            (make-bounded-sequence-builder 1
                                           :element-type '(unsigned-byte 8))
            256)
-          (error "Expected TYPE-ERROR."))
-      (type-error ())))
+          (error "Expected BOUNDED-SEQUENCE-BUILDER-ELEMENT-ERROR."))
+      (bounded-sequence-builder-element-error ())))
   (let ((builder (make-bounded-sequence-builder
                   4 :element-type '(or null symbol))))
     (bounded-sequence-builder-append-sequence builder '(nil one nil two))
@@ -391,15 +391,15 @@
     (handler-case
         (progn
           (bounded-sequence-builder-append-sequence builder #(2 bad 3))
-          (error "Expected TYPE-ERROR."))
-      (type-error ()))
+          (error "Expected BOUNDED-SEQUENCE-BUILDER-ELEMENT-ERROR."))
+      (bounded-sequence-builder-element-error ()))
     (test-equal #(1) (bounded-sequence-builder-snapshot builder))
     (handler-case
         (progn
           (bounded-sequence-builder-append-sequence-truncating
            builder #(2 bad 3))
-          (error "Expected TYPE-ERROR."))
-      (type-error ()))
+          (error "Expected BOUNDED-SEQUENCE-BUILDER-ELEMENT-ERROR."))
+      (bounded-sequence-builder-element-error ()))
     (test-equal #(1) (bounded-sequence-builder-snapshot builder)))
   (let ((builder (make-bounded-sequence-builder
                   3 :element-type '(unsigned-byte 8))))
