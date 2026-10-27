@@ -1173,8 +1173,8 @@
 
 (define-test test-integer-interval-map
   (let ((map (make-integer-interval-map)))
-    (integer-interval-map-set map 0 10 'base)
-    (integer-interval-map-set map 3 7 'middle)
+    (integer-interval-map-set map 0 10 :value 'base)
+    (integer-interval-map-set map 3 7 :value 'middle)
     (test-equal #((0 3 base) (3 7 middle) (7 10 base))
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))
@@ -1196,7 +1196,7 @@
     (test-equal #((0 4 a) (6 8 b))
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))
-    (integer-interval-map-set map 4 6 'a)
+    (integer-interval-map-set map 4 6 :value 'a)
     (test-equal #((0 6 a) (6 8 b))
                 (test-interval-map-triples
                  (integer-interval-map->vector map)))

@@ -282,7 +282,7 @@ values equal under VALUE-TEST are merged."
            (integer-interval-map-set map
                                      (first entry)
                                      (second entry)
-                                     (third entry)))
+                                     :value (third entry)))
          entries)
     map))
 
@@ -310,7 +310,7 @@ When POINT is unmapped, return DEFAULT, NIL, NIL, and NIL."
               (values default nil nil nil)))
         (values default nil nil nil))))
 
-(defun integer-interval-map-set (map start end value)
+(defun integer-interval-map-set (map start end &key value)
   "Set every integer in [START, END) to VALUE and return MAP.
 
 The existing canonical vector is rewritten in O(n) time."
