@@ -2,6 +2,17 @@
   (:documentation "General-purpose data structures for interactive Common Lisp systems.")
   (:use #:cl)
   (:export
+   ;; Layered registries and lifecycle adapters
+   #:layered-registry-replace
+   #:layered-registry-remove
+   #:layered-registry-remove-source
+   #:layered-registry-effective
+   #:layered-registry-restore-position
+   #:registry-lifecycle
+   #:make-registry-lifecycle
+   #:registry-snapshot
+   #:registry-restore
+   #:registry-remove-source
    ;; Shared conditions
    #:missing-weight-function-error
    #:missing-weight-function-error-maximum-weight

@@ -29,6 +29,8 @@ for interactive systems. It depends only on ANSI Common Lisp.
   queries and linear set algebra or rewrites
 - Compact monotone unsigned-integer index with lower-bound, upper-bound, and
   neighboring-value queries
+- Pure layered-registry list operations and callback-backed registry lifecycle
+  adapters
 
 All structures use opaque representations and live in the =structlisp=
 package. Public traversal functions use snapshots, so callbacks may mutate the
@@ -101,6 +103,22 @@ reports the complete evicted-entry vector and ordered failure records.
   (structlisp:fifo-cache->alist cache))
 ;; => ((:SECOND . "two") (:THIRD . "three"))
 #+end_src
+
+* Registry mechanics
+
+The =layered-registry-*= functions replace or remove source/key layers, select
+highest-ranked effective layers in first-key order (later ties win), and
+restore a copied registration at a recorded position. Lists and registration
+representations belong to the caller.
+
+=make-registry-lifecycle= requires function-valued =:snapshot-function=,
+=:restore-function= and =:remove-source-function= callbacks. Invoke them through
+=registry-snapshot=, =registry-restore= and =registry-remove-source= respectively;
+their argument counts are zero, one snapshot, and one source. A =nil= snapshot
+is valid. Callback return values (including multiple values) and conditions
+pass through unchanged. Snapshot detachment is the callback's responsibility.
+Callers manage locks, validation, derived state and cross-registry rollback.
+The three generic functions also support application-defined registry classes.
 
 * Example
 
